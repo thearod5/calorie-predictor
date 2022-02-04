@@ -1,0 +1,42 @@
+Name on Menu;	            	label in database;	        Calories;	Restaurant
+Cashew chicken;             	cashew_chicken;        	        400;		asian
+Panang curry;       	    	panang_curry_chicken;  	        350;		asian
+Spicy stir-fry chicken;	    	spicy_chicken_with_basil;       310;		asian
+Red curry with spinach;	    	spinach_red_curry_with_tofu;    200;		asian
+Orange chicken;         	orange_chicken;             	890;		asian
+Spicy string beans;     	spicy_string_beans;         	90;		asian
+Mapo tofu;              	mapo_tofu;                  	440;		asian
+Vegetable spring roll;  	vegetable_spring_roll;      	200;		asian
+Mongolian beef;	            	stirfry_beef;               	250;		asian
+Ginger chicken;	            	ginger_chicken;             	340;		asian
+Sweet & sour vegetables;    	sweet_and_sour_vegetables;   	220;		asian
+Stir-fry garlic soba;       	stir-fry_garlic_soba_noodles;	680;		asian
+Yellow curry w. chicken;    	yellow_curry_with_chicken;   	350;		asian
+Jasmine rice;           	jasmine_rice;               	130;		asian
+Brown rice;             	brown_rice;                 	130;		asian
+Pepperoni pizza;        	pepperoni_pizza;            	460;		italian
+Cheese pizza;           	cheese_pizza;               	370;		italian
+Vegetarian pizza;	        vegetarian_pizza;           	380;		italian
+Pineapple pizza;        	pineapple_pizza;               	500;		italian
+Meat lover's pizza;       	meatlovers_pizza;           	500;		italian
+Miss Piggy pizza;	        combo_supreme;              	420;		italian
+Meat lasagna;           	meat_lasagna;               	430;		italian
+Vegetarian lasagna;     	vegetarian_lasagna;         	450;		italian
+Chicken Alfredo;        	chicken_alfredo;               	820;		italian
+Breadsticks;            	bread_sticks;               	190;		italian
+Side salad;             	side_salad;                 	150;		italian
+Lobster bisque;         	lobster_bisque_soup;           	230;		soup
+Creamy mushroom soup;       	creamy_mushroom_soup;          	180;		soup
+Chicken coconut curry;   	chicken_coconut_curry;      	170;		soup
+Classic chili;          	classic_chili;              	160;		soup
+Chicken noodle soup;    	chicken_noodle_soup;           	100;		soup
+Broccoli cheddar soup;      	brocolli_cheddar_soup;         	220;		soup
+Creamy chicken soup;     	cream_of_chicken_soup;          190;		soup
+Market vegetable soup;      	market_vegetables_soup;         90;		soup
+Lentil soup;	            	vegetarian_lentils_soup;        90;		soup
+Tomato basil soup;      	creamy_tomato_basil_soup;       150;		soup
+Ciabatta;               	ciabatta;                    	90;		soup
+Potato bread;           	potato_bread;                  	330;		soup
+Whole wheat bread;      	whole_wheat_bread;             	100;		soup
+Corn bread;             	corn_bread;                 	360;		soup
+Olivera bread;          	olivera_bread;                	150;		soup
