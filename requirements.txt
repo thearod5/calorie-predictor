@@ -1,0 +1,4 @@
+Pillow
+tensorflow
+tensorflow_datasets
+numpy
