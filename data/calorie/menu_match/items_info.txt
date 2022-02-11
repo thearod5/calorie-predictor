@@ -1,4 +1,4 @@
-Name on Menu;	            	label in database;	        Calories;	Restaurant
+﻿Name on Menu;	            	label in database;	        Calories;	Restaurant
 Cashew chicken;             	cashew_chicken;        	        400;		asian
 Panang curry;       	    	panang_curry_chicken;  	        350;		asian
 Spicy stir-fry chicken;	    	spicy_chicken_with_basil;       310;		asian

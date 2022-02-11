@@ -8,7 +8,7 @@ class ClassificationDataset(Dataset):
 
     def __init__(self):
         labels = self.get_labels()
-        super().__init__(self.classification_dir, labels=labels)
+        super().__init__(self.classification_dir, labels=labels, label_mode='categorical')
 
     def get_labels(self):
         # TODO
