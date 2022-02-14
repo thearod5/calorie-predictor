@@ -3,3 +3,4 @@ tensorflow~=2.7.0
 tensorflow_datasets
 numpy
 pandas~=1.3.2
+PyYAML~=5.3.1
