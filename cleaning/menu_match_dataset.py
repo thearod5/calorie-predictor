@@ -9,6 +9,7 @@ class MenuMatchDataset(Dataset):
 
     def __init__(self):
         super().__init__('menu_match', 'total_calories.yml')
+
         self._image_ingredient_mappings = None
         self._image_calorie_mappings = None
         self.food_info = None
@@ -23,6 +24,3 @@ class MenuMatchDataset(Dataset):
         return self.get_image_calorie_mappings()[image_name]
 
 
-images, labels = MenuMatchDataset().get_labels()
-print(images)
-print(labels)

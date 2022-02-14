@@ -72,10 +72,8 @@ class Nutrition5kDataset(Dataset):
                     index = i * self.num_features
                     ingr_id = row[index + self.id_index]
                     self._ingredients[ingr_id] = Dish(ingr_id, float(row[index + self.calorie_index]),
-                                                float(row[index + self.mass_index]))
+                                                      float(row[index + self.mass_index]))
                     dish_ingr.append(ingr_id)
                 dish_id = row[self.id_index]
                 dish = Dish(dish_id, float(row[self.calorie_index]), float(row[self.mass_index]), dish_ingr)
                 self._dishes[dish_id] = dish
-
-
