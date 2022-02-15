@@ -1,18 +1,10 @@
 import csv
+import shutil
 
 import yaml
 import os
-from constants import DATA_DIR
+from constants import *
 import pandas as pd
-
-
-class Ingredient:
-
-    def __init__(self, name, calories, mass):
-        self.name = name
-        self.mass = mass
-        self.calories = calories
-
 
 """
 MENU MATCH
@@ -59,6 +51,7 @@ def make_image_calorie_mapping_yml():
     with open(TOTAL_CALORIES_FILE, 'w') as file:
         yaml.dump(image_calorie_mappings, file)
 
+
 """
 NUTRITION5k
 """
@@ -76,3 +69,27 @@ def make_new_metadata_csv():
             for row in reader:
                 new_row = [item for item in row if label_to_remove not in item]
                 writer.writerow(new_row)
+
+
+"""
+Food Images
+"""
+FOOD_IMAGES_DIR = os.path.join(DATA_DIR, 'food_images')
+FOOD_LABEL_FILE = os.path.join(FOOD_IMAGES_DIR, 'labels.yml')
+IMAGES_DIR = os.path.join(FOOD_IMAGES_DIR, 'images')
+
+
+def move_images_and_generate_yml(generate_yml=True):
+    image_class_mapping = {}
+    for root, dirs, files in os.walk(FOOD_IMAGES_DIR):
+        if root == FOOD_IMAGES_DIR or root == IMAGES_DIR:
+            continue
+        class_ = root.split(os.sep)[-1]
+        for filename in files:
+            name = filename.split(EXT_SEP)[0]
+            image_class_mapping[name] = class_
+            shutil.move(os.path.join(root, filename), IMAGES_DIR)
+
+    if generate_yml:
+        with open(FOOD_LABEL_FILE, 'w') as file:
+            yaml.dump(image_class_mapping, file)
