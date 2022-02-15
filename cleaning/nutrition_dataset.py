@@ -1,9 +1,9 @@
-import yaml
+import csv
+from enum import Enum
+from typing import *
 
 from cleaning.dataset import Dataset
-import csv
-from enum import IntEnum
-from typing import *
+from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
 
 
 class Dish:
@@ -15,52 +15,73 @@ class Dish:
         self.ingredients = ingredients
 
 
-class Mode(IntEnum):
-    CALORIE = 0
-    MASS = 1
-    INGREDIENTS = 2
+class Mode(Enum):
+    CALORIE = 'calories'
+    MASS = 'mass'
+    INGREDIENTS = 'ingredients'
 
 
-class Nutrition5kDataset(Dataset):
+class NutritionDataset(Dataset):
     id_index = 0
     calorie_index = 1
     mass_index = 2
     num_features = 6
 
-    def __init__(self, dataset_num=1):
+    def __init__(self, dataset_num: int = 1, mode: Mode = Mode.MASS):
+        """
+        constructor
+        :param dataset_num: number of the dataset (either 1 or 2)
+        :param mode: mode to determine which labels will be used
+        """
         label_file = 'dish_metadata_cafe' + str(dataset_num) + '.csv'
         super().__init__('nutrition5k', label_file)
         self._dishes = None
-        self._image_calorie_mappings = None
-        self._image_mass_mappings = None
         self._ingredients = None
-        self._mode = Mode.MASS
+        self._mode = mode
 
     def get_label(self, image_name: str) -> Union[float, List[str]]:
+        """
+        gets label (determined by the mode) corresponding to image
+        :param image_name: name of the image
+        :return: the label(s)
+        """
+        if IMAGE_NAME_SEPARATOR in image_name:
+            image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
         mappings = self.get_dishes() if image_name in self.get_dishes() else self.get_ingredients()
         dish = mappings[image_name]
-        if self._mode == Mode.MASS:
-            label = dish.mass
-        elif self._mode == Mode.CALORIE:
-            label = dish.calories
-        else:
-            label = dish.ingredients
-        return label
+        return getattr(dish, self._mode.value)
 
     def set_mode(self, mode: Mode) -> None:
+        """
+        sets the mode for which labels will be used
+        :param mode: the mode (i.e. calories, mass...)
+        :return: None
+        """
         self._mode = mode
 
     def get_dishes(self) -> Dict[str, Dish]:
+        """
+        gets the dictionary mapping dish id to the dish
+        :return: dict with dish id, Dish pairs
+        """
         if self._dishes is None:
             self.load_data()
         return self._dishes
 
     def get_ingredients(self) -> Dict[str, Dish]:
+        """
+        gets the dictionary mapping ingredient id to the ingredient
+        :return: dict with id, Dish pairs
+        """
         if self._ingredients is None:
             self.load_data()
         return self._ingredients
 
     def load_data(self) -> None:
+        """
+        loads the data from the label file
+        :return: None
+        """
         self._dishes = {}
         self._ingredients = {}
         with open(self.label_file, newline='') as csv_file:
