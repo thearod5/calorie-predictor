@@ -2,9 +2,8 @@
 A research effort into predicting the number of calories from a picture of food.
 
 - [ ] Download data and upload to data folder
-- [ ] Combined food classification pre-training task data
-- [ ] Combined food volume pre-training task data
-- [ ] Combine prediction task data
+- [ ] Encode class data - do in model or before?
+- [ ] Confirm dataset format is good for input to model
 - [ ] Create experiment pipeline
 - [ ] Run experiment on servers and collect results
 
