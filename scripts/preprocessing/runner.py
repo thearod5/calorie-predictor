@@ -1,6 +1,9 @@
+from scripts.preprocessing.ecustfd import EcustfdProcessor
 from scripts.preprocessing.food_image import FoodImageProcessor
+from scripts.preprocessing.menu_match import MenuMatchPrecessor
 from scripts.preprocessing.nutrition5k import Nutrition5kH264Images, Nutrition5kJpgImages
 from scripts.preprocessing.processor import ProcessingSettings
+from scripts.preprocessing.unimib2016 import UNIMIB2016Processor
 
 """
 The following script will read, resize, and save files from the nutrition5k dataset.
@@ -27,8 +30,8 @@ if __name__ == "__main__":
     """
     Processing 
     """
-    # process_nutrition5k(settings)
-    # EcustfdProcessor().process(settings)
-    # MenuMatchPrecessor().process(settings)
-    # UNIMIB2016Processor().process(settings)
+    process_nutrition5k(settings)
+    EcustfdProcessor().process(settings)
+    MenuMatchPrecessor().process(settings)
+    UNIMIB2016Processor().process(settings)
     FoodImageProcessor().process(settings).create_output_file()  # .process(settings)
