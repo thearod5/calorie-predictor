@@ -1,8 +1,6 @@
 import warnings
 from enum import Enum
 
-import tensorflow as tf
-
 from experiment.tasks.calories import CaloriePredictionTask
 from experiment.tasks.category import FoodClassificationTask
 from experiment.tasks.mass import MassPredictionTask
@@ -14,16 +12,16 @@ warnings.filterwarnings("ignore")
 
 class Tasks(Enum):
     TEST = TestTask
-    MASS = MassPredictionTask
     CALORIE = CaloriePredictionTask
+    MASS = MassPredictionTask
     INGREDIENTS = FoodClassificationTask
 
 
 """
 Runner Settings
 """
-task_selected = Tasks.CALORIE
-base_model = BaseModel.VGG
+task_selected = Tasks.MASS
+base_model = BaseModel.TEST
 n_epochs = 5  # while testing
 """
 Gathers task, trains, and evaluates it

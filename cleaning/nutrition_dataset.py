@@ -56,10 +56,8 @@ class NutritionDataset(Dataset):
         """
         if IMAGE_NAME_SEPARATOR in image_name:
             image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
-            # print(image_name);
+
         mappings = self.get_dishes() if image_name in self.get_dishes() else self.get_ingredients()
-        # print("Mappings:", mappings)
-        # print("Mappings:", mappings["dish_1561662216"].str())
         dish = mappings[image_name]
         return getattr(dish, self._mode.value)
 
