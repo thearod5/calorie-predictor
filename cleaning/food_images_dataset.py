@@ -3,6 +3,7 @@ from typing import Dict
 import yaml
 
 from cleaning.dataset import Dataset
+from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
 
 
 class FoodImagesDataset(Dataset):
@@ -29,4 +30,6 @@ class FoodImagesDataset(Dataset):
          :param image_name: name of the image
          :return: the food class
          """
+        if IMAGE_NAME_SEPARATOR in image_name:
+            image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]
         return self.get_image_class_mappings()[image_name]

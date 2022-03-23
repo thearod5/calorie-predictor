@@ -1,9 +1,9 @@
-import yaml
+import csv
+from enum import Enum
+from typing import *
 
 from cleaning.dataset import Dataset
-import csv
-from enum import IntEnum, Enum
-from typing import *
+from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
 
 
 class Dish:
@@ -45,6 +45,8 @@ class NutritionDataset(Dataset):
         :param image_name: name of the image
         :return: the label(s)
         """
+        if IMAGE_NAME_SEPARATOR in image_name:
+            image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
         mappings = self.get_dishes() if image_name in self.get_dishes() else self.get_ingredients()
         dish = mappings[image_name]
         return getattr(dish, self._mode.value)
