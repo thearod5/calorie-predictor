@@ -11,6 +11,7 @@ from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
 
 from constants import INPUT_SIZE, N_EPOCHS, PROJECT_DIR
+from models.test_model import test_model
 from models.vgg import vgg_19
 
 
@@ -37,6 +38,7 @@ class BaseModel(Enum):
     VGG = "vgg"
     RESNET = "resnet"
     XCEPTION = "xception"
+    TEST = "test"
 
 
 def create_checkpoint_path(task, base_model: BaseModel):
@@ -48,7 +50,9 @@ def create_checkpoint_path(task, base_model: BaseModel):
 BASE_MODELS = {
     BaseModel.VGG: vgg_19,
     BaseModel.RESNET: None,  # TODO: Add model
-    BaseModel.XCEPTION: None  # TODO: Add model
+    BaseModel.XCEPTION: None,  # TODO: Add model
+    BaseModel.TEST: test_model
+
 }
 
 
@@ -90,7 +94,7 @@ class Task:
             self.model.compile(optimizer="adam", loss="mse", metrics=["mae"])
         else:
             self.model.compile(optimizer="adam",
-                               loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                               loss=tf.keras.losses.BinaryCrossentropy(),
                                metrics=["accuracy"])
 
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
