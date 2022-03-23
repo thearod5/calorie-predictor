@@ -14,11 +14,20 @@ class Dish:
         self.calories = calories
         self.ingredients = ingredients
 
+    def str(self) -> str:
+        return "%s: C{%s} M{%s} I{%s}" % (self.name, self.calories, self.mass, self.ingredients)
+
 
 class Mode(Enum):
     CALORIE = 'calories'
     MASS = 'mass'
     INGREDIENTS = 'ingredients'
+
+
+DatasetMap = {
+    1: [Mode.CALORIE, Mode.MASS],
+    2: [Mode.INGREDIENTS]
+}
 
 
 class NutritionDataset(Dataset):
@@ -47,7 +56,10 @@ class NutritionDataset(Dataset):
         """
         if IMAGE_NAME_SEPARATOR in image_name:
             image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
+            # print(image_name);
         mappings = self.get_dishes() if image_name in self.get_dishes() else self.get_ingredients()
+        # print("Mappings:", mappings)
+        # print("Mappings:", mappings["dish_1561662216"].str())
         dish = mappings[image_name]
         return getattr(dish, self._mode.value)
 
