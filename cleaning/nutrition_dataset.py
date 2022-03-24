@@ -43,7 +43,8 @@ class NutritionDataset(Dataset):
         :param mode: mode to determine which labels will be used
         """
         label_file = 'dish_metadata_cafe' + str(dataset_num) + '.csv'
-        super().__init__('nutrition5k', label_file)
+        dataset_dirname =  'nutrition5k' + str(dataset_num)
+        super().__init__(dataset_dirname, label_file)
         self._dishes = None
         self._ingredients = None
         self._mode = mode
