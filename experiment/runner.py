@@ -8,6 +8,8 @@ sys.path.append(path_to_src)
 import warnings
 from enum import Enum
 
+from constants import N_EPOCHS
+
 from experiment.tasks.calorie_task import CaloriePredictionTask
 from experiment.tasks.category_task import FoodClassificationTask
 from experiment.tasks.mass_task import MassPredictionTask
@@ -34,14 +36,7 @@ name2model = {
     "resnet": BaseModel.RESNET,
     "xception": BaseModel.XCEPTION
 }
-"""
-Runner Settings
-"""
 
-n_epochs = 10  # while testing
-"""
-Gathers task, trains, and evaluates it
-"""
 
 if __name__ == "__main__":
 
@@ -55,5 +50,5 @@ if __name__ == "__main__":
     base_model = name2model[model]
 
     # 3. Create task resources and train.
-    task = task_selected.value(base_model, n_epochs=n_epochs)
+    task = task_selected.value(base_model, n_epochs=N_EPOCHS)
     task.train()

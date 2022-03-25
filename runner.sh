@@ -12,4 +12,6 @@ source calorie-predictor/bin/activate
 
 pip install -r requirements.txt
 
-experiment/runner.py calories resnet
+export PATH=${HOME}/.local/bin:${PATH}
+
+python experiment/runner.py calories resnet
