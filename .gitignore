@@ -74,6 +74,9 @@ docs/_build/
 # PyBuilder
 target/
 
+processed/**
+runner.sh.*
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
