@@ -8,7 +8,7 @@ sys.path.append(path_to_src)
 import warnings
 from enum import Enum
 
-from constants import N_EPOCHS
+from constants import N_EPOCHS, set_env
 
 from experiment.tasks.calorie_task import CaloriePredictionTask
 from experiment.tasks.category_task import FoodClassificationTask
@@ -29,6 +29,7 @@ class Tasks(Enum):
 name2task = {
     "calories": Tasks.CALORIE,
     "mass": Tasks.MASS,
+    "ingredients": Tasks.INGREDIENTS
 }
 
 name2model = {
@@ -37,15 +38,15 @@ name2model = {
     "xception": BaseModel.XCEPTION
 }
 
-
 if __name__ == "__main__":
 
     # 1. Process arguments
-    if len(sys.argv) != 3:
-        raise Exception("Expected: [TaskName] [ModelName]")
-    task, model = sys.argv[1:]
+    if len(sys.argv) != 4:
+        raise Exception("Expected: [Env] [TaskName] [ModelName]")
+    env, task, model = sys.argv[1:]
 
     # 2. Extract task and model
+    set_env(env)
     task_selected = name2task[task]
     base_model = name2model[model]
 

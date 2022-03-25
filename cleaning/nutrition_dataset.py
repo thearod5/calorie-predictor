@@ -3,9 +3,10 @@ import os
 from enum import Enum
 from typing import *
 
+from tensorflow import Tensor
+
 from cleaning.dataset import Dataset, get_name_from_path
 from constants import LOG_SKIPPED_ENTRIES
-from experiment.IngredientIndexMap import IngredientIndexMap
 from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
 
 
@@ -58,7 +59,6 @@ class NutritionDataset(Dataset):
         self._dishes = {}
         self._mode = mode
         self._label_files = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
-        self.ingredient_index_map = IngredientIndexMap()
         self._load_data()
 
     def get_image_paths(self):
@@ -70,7 +70,7 @@ class NutritionDataset(Dataset):
         return list(filter(lambda p: self._get_image_dish(get_name_from_path(p)) is not None,
                            super().get_image_paths()))
 
-    def get_label(self, image_name: str) -> Union[float, List[str]]:
+    def get_label(self, image_name: str) -> Union[float, Tensor]:
         """
         gets label (determined by the mode) corresponding to image
         :param image_name: name of the image
@@ -81,7 +81,7 @@ class NutritionDataset(Dataset):
             raise Exception("No labels found for image:" + image_name)
         label = getattr(dish, self._mode.value)
         if self._mode == Mode.INGREDIENTS:
-            return self.ingredient_index_map.ingredients2vector(label)
+            return self.food2index.to_ingredients_tensor(label)
         return label
 
     def _get_image_dish(self, image_name: str) -> Union[Dish, None]:
@@ -98,10 +98,8 @@ class NutritionDataset(Dataset):
         """
         self._dishes = {}
         processed_ids = []
-        print(self._label_files)
         for label_file_name in self._label_files:
             path_to_label_file = os.path.join(self.dataset_dir, label_file_name)
-            print("processing:", path_to_label_file)
             with open(path_to_label_file, newline='') as csv_file:
                 reader = csv.reader(csv_file)
                 for row in reader:
@@ -115,7 +113,7 @@ class NutritionDataset(Dataset):
                     # print(label_file_name, dish_mode_value)
                     self._dishes[dish_id] = self._parse_row_into_dish(row)
                     processed_ids.append(dish_id)
-        self.ingredient_index_map.save()
+        self.food2index.save()
 
     def _parse_row_into_dish(self, row) -> Dish:
 
@@ -130,7 +128,7 @@ class NutritionDataset(Dataset):
         for ingredient_index in range(1, int(n_ingredients)):
             ingredient_name_index = ingredient_index * NutritionDataset.num_features
             ingredient_name = row[ingredient_name_index]
-            self.ingredient_index_map.add(ingredient_name)
+            self.food2index.add(ingredient_name)
             dish_ingredients.append(ingredient_name)
 
         # 3. Create dish and save

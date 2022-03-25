@@ -1,16 +1,16 @@
 import csv
 import shutil
 
-import yaml
-import os
-from constants import *
 import pandas as pd
+import yaml
+
+from constants import *
 
 """
 MENU MATCH
 """
 
-MENU_MATCH = os.path.join(DATA_DIR, 'menu_match')
+MENU_MATCH = os.path.join(get_data_dir(), 'menu_match')
 ORIG_LABEL_FILE = os.path.join(MENU_MATCH, 'labels.txt')
 NEW_LABEL_FILE = os.path.join(MENU_MATCH, 'labels.yml')
 ORIG_DATA_FILE = os.path.join(MENU_MATCH, 'items_info.txt')
@@ -55,7 +55,7 @@ def make_image_calorie_mapping_yml():
 """
 NUTRITION5k
 """
-NUTRITION_5k = os.path.join(DATA_DIR, 'nutrition5k')
+NUTRITION_5k = os.path.join(get_data_dir(), 'nutrition5k')
 ORIG_METADATA_FILE = os.path.join(NUTRITION_5k, 'dish_metadata_cafe2.csv')
 NEW_METADATA_FILE = os.path.join(NUTRITION_5k, 'dish_metadata_cafe2.csv')
 
@@ -74,7 +74,7 @@ def make_new_metadata_csv():
 """
 Food Images
 """
-FOOD_IMAGES_DIR = os.path.join(DATA_DIR, 'food_images')
+FOOD_IMAGES_DIR = os.path.join(get_data_dir(), 'food_images')
 FOOD_LABEL_FILE = os.path.join(FOOD_IMAGES_DIR, 'labels.yml')
 IMAGES_DIR = os.path.join(FOOD_IMAGES_DIR, 'images')
 

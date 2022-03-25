@@ -2,25 +2,30 @@ import os
 from abc import abstractmethod
 from enum import Enum
 
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
+from tensorflow.python.data import Dataset
 
 from constants import INPUT_SHAPE, N_EPOCHS, PROJECT_DIR
+from experiment.Food2Index import Food2Index
 from experiment.tasks.test_model import test_model
 
 
 def convert_to_task(base_model_class, n_outputs: int):
     inputs = tf.keras.Input(shape=INPUT_SHAPE)
     base_model = base_model_class(
+        pooling='avg',
         include_top=False,
+        input_shape=INPUT_SHAPE,
         weights="imagenet",
         input_tensor=inputs
     )
-    added_dense_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-2].output)
-    model = tf.keras.Model(inputs=inputs, outputs=added_dense_layer)
+    classification_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-1].output)
+    model = tf.keras.Model(inputs=base_model.input, outputs=classification_layer)
     return model
 
 
@@ -54,6 +59,15 @@ def create_checkpoint_path(task, base_model: BaseModel):
     task_name = task.__class__.__name__
     base_model_name = base_model.value
     return os.path.join(PROJECT_DIR, "results", "checkpoints", task_name, base_model_name, "cp.ckpt")
+
+
+def sample_data(data: Dataset):
+    ingredient_index_map = Food2Index()
+    for i, (image, label) in enumerate(data.take(9)):
+        ax = plt.subplot(3, 3, i + 1)
+        plt.imshow(image[0, :, :, :])
+        plt.title(" ".join(ingredient_index_map.to_ingredients_list(label[0])))
+        plt.axis("off")
 
 
 class Task:
@@ -95,7 +109,7 @@ class Task:
             self.model.compile(optimizer="adam", loss="mse", metrics=["mae"])
         else:
             self.model.compile(optimizer="adam",
-                               loss=tf.keras.losses.BinaryCrossentropy(),
+                               loss=tf.keras.losses.CategoricalCrossentropy(),
                                metrics=["accuracy"])
 
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
