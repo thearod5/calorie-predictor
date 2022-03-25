@@ -64,7 +64,7 @@ class ImageFolderProcessor:
 
     def process(self, settings: ProcessingSettings) -> "ImageFolderProcessor":
         self.print_bar()
-        print("Starting: " + self.__class__.__name__)
+        print("Processing : " + self.__class__.__name__)
         image_paths = self.dataset.get_image_paths()
         for entry_name in image_paths:
             entry_outputs = self.create_output_paths(entry_name)
