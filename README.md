@@ -1,10 +1,10 @@
 # Calorie Predictor
 A research effort into predicting the number of calories from a picture of food.
 
-- [ ] Download data and upload to data folder
-- [ ] Encode class data - do in model or before?
-- [ ] Confirm dataset format is good for input to model
-- [ ] Create experiment pipeline
+- [x] Download data and upload to data folder
+- [x] Encode class data - do in model or before?
+- [x] Confirm dataset format is good for input to model
+- [x] Create experiment pipeline
 - [ ] Run experiment on servers and collect results
 
 # Proposal Feedback
