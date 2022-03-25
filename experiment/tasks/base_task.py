@@ -5,23 +5,23 @@ from enum import Enum
 import numpy as np
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Dense
-from keras.models import Sequential
 from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
 
-from constants import INPUT_SIZE, N_EPOCHS, PROJECT_DIR
-from models.test_model import test_model
-from models.vgg import vgg_19
+from constants import INPUT_SHAPE, N_EPOCHS, PROJECT_DIR
+from experiment.tasks.test_model import test_model
 
 
-def convert_to_task(base_model, n_outputs: int):
-    regression_model = Sequential()
-    for layer in base_model.layers[:-1]:  # go through until last layer
-        regression_model.add(layer)
-    regression_model.add(Dense(n_outputs))
-    regression_model.build(INPUT_SIZE)
-    return regression_model
+def convert_to_task(base_model_class, n_outputs: int):
+    inputs = tf.keras.Input(shape=INPUT_SHAPE)
+    base_model = base_model_class(
+        include_top=False,
+        weights="imagenet",
+        input_tensor=inputs
+    )
+    added_dense_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-2].output)
+    model = tf.keras.Model(inputs=inputs, outputs=added_dense_layer)
+    return model
 
 
 class TaskMode(Enum):
@@ -41,19 +41,19 @@ class BaseModel(Enum):
     TEST = "test"
 
 
+BASE_MODELS = {
+    BaseModel.VGG: tf.keras.applications.VGG19,
+    BaseModel.RESNET: tf.keras.applications.ResNet50,
+    BaseModel.XCEPTION: tf.keras.applications.Xception,
+    BaseModel.TEST: test_model
+
+}
+
+
 def create_checkpoint_path(task, base_model: BaseModel):
     task_name = task.__class__.__name__
     base_model_name = base_model.value
     return os.path.join(PROJECT_DIR, "results", "checkpoints", task_name, base_model_name, "cp.ckpt")
-
-
-BASE_MODELS = {
-    BaseModel.VGG: vgg_19,
-    BaseModel.RESNET: None,  # TODO: Add model
-    BaseModel.XCEPTION: None,  # TODO: Add model
-    BaseModel.TEST: test_model
-
-}
 
 
 class Task:
@@ -64,6 +64,7 @@ class Task:
                  n_epochs=N_EPOCHS,
                  load_weights=True,
                  load_on_init=True):
+        self.base_model = base_model
         self.task_type = task_type
         self.load_weights = load_weights
         self.n_outputs = n_outputs
@@ -100,8 +101,7 @@ class Task:
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
             print("Loading previous weights...")
             self.model.load_weights(self.checkpoint_path)
-
-        self.model.summary()
+        print("Loading: " + self.base_model.value + " on " + self.__class__.__name__)
 
     def train(self):
         task_monitor = "val_mae" if self.is_regression else "val_accuracy"
@@ -119,9 +119,11 @@ class Task:
                        callbacks=[model_checkpoint_callback])
 
     def evaluate(self):
-        y_true = np.concatenate([y for x, y in self.test_data()], axis=0)
-        y_pred = self.model.predict(self.test_data())
-
+        self.model.summary()
+        x_test = [x for x, _ in self.test_data()]
+        y_test = [y for _, y in self.test_data()]
+        y_pred = self.model.predict(x_test)
+        y_true = np.concatenate(y_test, axis=0)
         if self.is_regression:
             mae = mean_absolute_error(y_true, y_pred)
             print("Test Mean Absolute Error:", mae)

@@ -1,3 +1,4 @@
+import os
 from abc import abstractmethod
 from typing import *
 
@@ -23,6 +24,10 @@ def decode_image_from_path(file_path: str) -> object:
         img = tf.io.read_file(file_path)
         img = tf.io.decode_jpeg(img, channels=N_CHANNELS)
     return tf.image.resize(img, IMAGE_SIZE)
+
+
+def get_name_from_path(path: str):
+    return path.split(os.sep)[-1].split(EXT_SEP)[0]
 
 
 class Dataset:
@@ -58,14 +63,17 @@ class Dataset:
                                  os.listdir(self.image_dir) if filename[0] != "."]  # ignore system files
         return self._image_paths
 
+    def get_image_names(self):
+        return list(map(get_name_from_path, self.get_image_paths()))
+
     def get_labels(self) -> tf.data.Dataset:
         """
         makes a dataset of all image labels
         :return: a tensor flow dataset of all labels
         """
         labels = []
-        for name in self.get_image_paths():
-            name = name.split(os.sep)[-1].split(EXT_SEP)[0]  # get only the image name
+        image_names = self.get_image_names()
+        for name in image_names:
             labels.append(self.get_label(name))
         return tf.data.Dataset.from_tensor_slices(tf.ragged.constant(labels))
 

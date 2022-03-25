@@ -1,14 +1,17 @@
 import csv
+import os
 from enum import Enum
 from typing import *
 
-from cleaning.dataset import Dataset
+from cleaning.dataset import Dataset, get_name_from_path
+from constants import LOG_SKIPPED_ENTRIES
+from experiment.IngredientIndexMap import IngredientIndexMap
 from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
 
 
 class Dish:
 
-    def __init__(self, name, calories, mass, ingredients=None):
+    def __init__(self, name, calories, mass, ingredients):
         self.name = name
         self.mass = mass
         self.calories = calories
@@ -30,24 +33,42 @@ DatasetMap = {
 }
 
 
+def is_mode_value_valid(mode_value: Union[float, list]):
+    if isinstance(mode_value, float) and mode_value < 1:
+        return False
+    if isinstance(mode_value, list) and len(mode_value) == 0:
+        return False
+    return True
+
+
 class NutritionDataset(Dataset):
     id_index = 0
     calorie_index = 1
     mass_index = 2
     num_features = 6
 
-    def __init__(self, dataset_num: int = 1, mode: Mode = Mode.MASS):
+    def __init__(self, mode: Mode):
         """
         constructor
         :param dataset_num: number of the dataset (either 1 or 2)
         :param mode: mode to determine which labels will be used
         """
-        label_file = 'dish_metadata_cafe' + str(dataset_num) + '.csv'
-        dataset_dirname =  'nutrition5k' + str(dataset_num)
-        super().__init__(dataset_dirname, label_file)
-        self._dishes = None
-        self._ingredients = None
+        dataset_dirname = 'nutrition5k'
+        super().__init__(dataset_dirname, "")
+        self._dishes = {}
         self._mode = mode
+        self._label_files = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
+        self.ingredient_index_map = IngredientIndexMap()
+        self._load_data()
+
+    def get_image_paths(self):
+        """
+        Overrides parent paths to filter out images whose corresponding dishes do not
+        have sufficient or valid data.
+        :return:
+        """
+        return list(filter(lambda p: self._get_image_dish(get_name_from_path(p)) is not None,
+                           super().get_image_paths()))
 
     def get_label(self, image_name: str) -> Union[float, List[str]]:
         """
@@ -55,57 +76,62 @@ class NutritionDataset(Dataset):
         :param image_name: name of the image
         :return: the label(s)
         """
+        dish = self._get_image_dish(image_name)
+        if dish is None:
+            raise Exception("No labels found for image:" + image_name)
+        label = getattr(dish, self._mode.value)
+        if self._mode == Mode.INGREDIENTS:
+            return self.ingredient_index_map.ingredients2vector(label)
+        return label
+
+    def _get_image_dish(self, image_name: str) -> Union[Dish, None]:
         if IMAGE_NAME_SEPARATOR in image_name:
             image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
+        if image_name not in self._dishes:
+            return None
+        return self._dishes[image_name]
 
-        mappings = self.get_dishes() if image_name in self.get_dishes() else self.get_ingredients()
-        dish = mappings[image_name]
-        return getattr(dish, self._mode.value)
-
-    def set_mode(self, mode: Mode) -> None:
-        """
-        sets the mode for which labels will be used
-        :param mode: the mode (i.e. calories, mass...)
-        :return: None
-        """
-        self._mode = mode
-
-    def get_dishes(self) -> Dict[str, Dish]:
-        """
-        gets the dictionary mapping dish id to the dish
-        :return: dict with dish id, Dish pairs
-        """
-        if self._dishes is None:
-            self.load_data()
-        return self._dishes
-
-    def get_ingredients(self) -> Dict[str, Dish]:
-        """
-        gets the dictionary mapping ingredient id to the ingredient
-        :return: dict with id, Dish pairs
-        """
-        if self._ingredients is None:
-            self.load_data()
-        return self._ingredients
-
-    def load_data(self) -> None:
+    def _load_data(self) -> None:
         """
         loads the data from the label file
         :return: None
         """
         self._dishes = {}
-        self._ingredients = {}
-        with open(self.label_file, newline='') as csv_file:
-            reader = csv.reader(csv_file)
-            for row in reader:
-                dish_ingr = []
-                num_ingredients = int((len(row) / self.num_features))
-                for i in range(1, num_ingredients):
-                    index = i * self.num_features
-                    ingr_id = row[index + self.id_index]
-                    self._ingredients[ingr_id] = Dish(ingr_id, float(row[index + self.calorie_index]),
-                                                      float(row[index + self.mass_index]))
-                    dish_ingr.append(ingr_id)
-                dish_id = row[self.id_index]
-                dish = Dish(dish_id, float(row[self.calorie_index]), float(row[self.mass_index]), dish_ingr)
-                self._dishes[dish_id] = dish
+        processed_ids = []
+        print(self._label_files)
+        for label_file_name in self._label_files:
+            path_to_label_file = os.path.join(self.dataset_dir, label_file_name)
+            print("processing:", path_to_label_file)
+            with open(path_to_label_file, newline='') as csv_file:
+                reader = csv.reader(csv_file)
+                for row in reader:
+                    dish_id = row[self.id_index]
+                    dish = self._parse_row_into_dish(row)
+                    dish_mode_value = getattr(dish, self._mode.value)
+                    if dish_id in processed_ids or not is_mode_value_valid(dish_mode_value):
+                        if LOG_SKIPPED_ENTRIES:
+                            print(dish_id, ": was already processed or has invalid value for mode", self._mode)
+                        continue
+                    # print(label_file_name, dish_mode_value)
+                    self._dishes[dish_id] = self._parse_row_into_dish(row)
+                    processed_ids.append(dish_id)
+        self.ingredient_index_map.save()
+
+    def _parse_row_into_dish(self, row) -> Dish:
+
+        # 1. Get calories and mass
+        dish_id = row[self.id_index]
+        dish_calories = float(row[self.calorie_index])
+        dish_mass = float(row[self.mass_index])
+
+        # 2. Get ingredients
+        n_ingredients = len(row) / self.num_features
+        dish_ingredients = []
+        for ingredient_index in range(1, int(n_ingredients)):
+            ingredient_name_index = ingredient_index * NutritionDataset.num_features
+            ingredient_name = row[ingredient_name_index]
+            self.ingredient_index_map.add(ingredient_name)
+            dish_ingredients.append(ingredient_name)
+
+        # 3. Create dish and save
+        return Dish(dish_id, dish_calories, dish_mass, dish_ingredients)

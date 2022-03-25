@@ -1,13 +1,13 @@
-import os
 from os.path import *
 
 PROJECT_DIR = dirname(abspath(__file__))
-DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+DATA_DIR = "/Volumes/Betito HDD/Datasets/calorie-predictor/processed"  # os.path.join(PROJECT_DIR, 'data')
 RANDOM_SEED = 0
 N_CHANNELS = 3
 IMAGE_SIZE = (224, 224)
-INPUT_SIZE = IMAGE_SIZE + (N_CHANNELS,)
+INPUT_SHAPE = IMAGE_SIZE + (N_CHANNELS,)
 BATCH_SIZE = 32
 EXT_SEP = "."
-TEST_SPLIT_SIZE = .25
+TEST_SPLIT_SIZE = .75
 N_EPOCHS = 50
+LOG_SKIPPED_ENTRIES = False
