@@ -6,8 +6,9 @@ from scripts.preprocessing.processor import ProcessingSettings
 from scripts.preprocessing.unimib2016 import UNIMIB2016Processor
 
 """
-The following script will read, resize, and save files from the nutrition5k dataset.
+The following script will read, resize, and save files from all of the experiment datasets.
 The dataset consists of two file formats: .jpg and .h264
+Note, only the first frame of the .h264 video is taken as the image.
 All images are resized to 224x224 and saved in .jpg
 """
 

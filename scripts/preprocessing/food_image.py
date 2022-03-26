@@ -30,10 +30,11 @@ class FoodImageProcessor(ImageFolderProcessor):
         for image_name in os.listdir(path_to_food_category):
             if image_name[0] == ".":
                 continue
-            image_id = image_name.split(".")[0]
             input_path = os.path.join(path_to_food_category, image_name)
-            output_image_name = IMAGE_NAME_SEPARATOR.join([image_id, food_category + ".jpg"])
-            output_image_path = os.path.join(self.PATH_TO_FOOD_IMAGES_OUTPUT, output_image_name)
+            output_directory_path = os.path.join(self.PATH_TO_FOOD_IMAGES_OUTPUT, food_category)
+            if not os.path.isdir(output_directory_path):
+                os.mkdir(output_directory_path)
+            output_image_path = os.path.join(output_directory_path, image_name)
             output_paths.append((input_path, output_image_path))
         return output_paths
 

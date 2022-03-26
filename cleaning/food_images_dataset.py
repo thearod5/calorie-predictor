@@ -1,4 +1,5 @@
-from typing import Dict
+import os
+from typing import Dict, List
 
 import yaml
 from tensorflow import Tensor
@@ -18,6 +19,26 @@ class FoodImagesDataset(Dataset):
         self._image_class_mappings = {}
         self.load_data()
 
+    def get_image_paths(self) -> List:
+        """
+        Returns images by listing directories of categories and listing the images
+        within those directories.
+        :return: a list of the image filenames
+        """
+        if self._image_paths is None:
+            paths = []
+            for dir_name in os.listdir(self.image_dir):
+                if dir_name[0] == ".":
+                    continue
+                path_to_dir = os.path.join(self.image_dir, dir_name)
+                for file_name in os.listdir(path_to_dir):
+                    if file_name[0] == ".":
+                        continue
+                    path_to_file = os.path.join(path_to_dir, file_name)
+                    paths.append(path_to_file)
+            self._image_paths = paths
+        return self._image_paths
+
     def get_label(self, image_name: str) -> Tensor:
         """
          get class corresponding to image
@@ -35,7 +56,7 @@ class FoodImagesDataset(Dataset):
         :return: a dictionary of image, class pairs
         """
         return self._image_class_mappings
-    
+
     def load_data(self):
         food2index = Food2Index()
         self._image_class_mappings = yaml.safe_load(open(self.label_file))
