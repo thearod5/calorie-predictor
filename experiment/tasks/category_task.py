@@ -17,7 +17,7 @@ class FoodClassificationTask(Task):
         for d in datasets[1:]:
             dataset = dataset.concatenate(d.get_dataset(shuffle=False))
             image_count += len(d.get_image_paths())
-        dataset = dataset.shuffle(buffer_size=1000, seed=RANDOM_SEED)
+        dataset = dataset.shuffle(buffer_size=image_count, seed=RANDOM_SEED)
         d_splits = list(map(prepare_dataset, split_dataset(dataset, image_count, TEST_SPLIT_SIZE)))
         train, validation = d_splits[0], d_splits[1]
         self._train = train
