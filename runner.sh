@@ -1,6 +1,8 @@
 #!/bin/bash
 #$ -M vhsalbertorodriguez@gmail.com
 #$ -m abe
+#$ -q gpu
+#$ -l gpu_card=1
 
 module load python
 
