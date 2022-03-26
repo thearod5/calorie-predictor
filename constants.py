@@ -13,6 +13,7 @@ EXT_SEP = "."
 TEST_SPLIT_SIZE = .20
 N_EPOCHS = 10
 LOG_SKIPPED_ENTRIES = False
+MAXIMUM_BUFFER_SIZE = 20000
 
 
 def get_data_dir():
