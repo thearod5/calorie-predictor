@@ -1,6 +1,9 @@
 # Calorie Predictor
 A research effort into predicting the number of calories from a picture of food.
 
+# FIRST CHECKPOINT REPORT
+Please see the following [report](https://drive.google.com/file/d/1MZT3rI8wq99YI0DyihPeggcYV7hzWX4F/view?usp=sharing) for the pre-liminary results of our experiment.
+
 # Running
 In order to run the following experiment:
 
