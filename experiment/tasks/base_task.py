@@ -27,6 +27,7 @@ def convert_to_task(base_model_class, n_outputs: int):
     )
     classification_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-1].output)
     model = tf.keras.Model(inputs=base_model.input, outputs=classification_layer)
+
     return model
 
 
@@ -79,6 +80,8 @@ class Task:
                  n_epochs=N_EPOCHS,
                  load_weights=True,
                  load_on_init=True):
+        print("*" * 20, "Run Settings", "*" * 20)
+        print("Task:", self.__class__.__name__)
         self.base_model = base_model
         self.task_type = task_type
         self.load_weights = load_weights
@@ -89,6 +92,7 @@ class Task:
         self.is_regression = task_type == TaskType.REGRESSION
         if load_on_init:
             self.load_model()
+        print("*" * 50)
 
     @property
     @abstractmethod
@@ -117,11 +121,13 @@ class Task:
             self.model.compile(optimizer="adam",
                                loss=tf.keras.losses.CategoricalCrossentropy(),
                                metrics=["accuracy"])
-
+        weights = "Random"
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
-            print("Loading previous weights...")
             self.model = tf.keras.models.load_model(self.checkpoint_path)
-        print("Loading: " + self.base_model.value + " on " + self.__class__.__name__)
+            weights = "Previous best on validation"
+
+        print("Model:", self.base_model.value)
+        print("Weights:", weights)
 
     def train(self):
         task_monitor = "val_mae" if self.is_regression else "val_accuracy"
@@ -139,15 +145,15 @@ class Task:
                        callbacks=[model_checkpoint_callback])
 
     def get_predictions(self, data):
-        batch_predictions = self.model.predict(data)
+        y_pred = self.model.predict(data)
 
         # TODO: Refactor
-        y_flat = []
+        y_true = []
         for _, batch_y in data:
             for y_vector in batch_y:
-                y_flat.append(y_vector)
+                y_true.append(y_vector)
 
-        return y_flat, batch_predictions
+        return y_true, y_pred
 
 
 class RegressionTask(Task, ABC):
@@ -156,11 +162,22 @@ class RegressionTask(Task, ABC):
         super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
 
     def eval(self):
-        y_test, y_pred = self.get_predictions(self.validation_data())
-        y_true = np.concatenate(y_test, axis=0)
+        y_true, y_pred = self.get_predictions(self.validation_data())
+
         if self.is_regression:
-            mae = mean_absolute_error(y_true, y_pred)
+            mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
             print("Test Mean Absolute Error:", mae)
+
+    def get_predictions(self, data):
+        """
+        Performs data conversion from 1D tensors to single numbers.
+        :param data: The data to get predictions from.
+        :return: The true y values and the predicted values respectively.
+        """
+        y_true, y_pred = super().get_predictions(data)
+        y_true = list(map(lambda v: v.numpy(), y_true))  # unpacks 1D vector into single number
+        y_true = np.array(y_true)
+        return y_true, y_pred
 
 
 class ClassificationTask(Task, ABC):

@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 # makes this runnable from command line
@@ -13,7 +14,7 @@ sys.path.append(path_to_src)
 import warnings
 from enum import Enum
 
-from constants import N_EPOCHS, set_env
+from constants import N_EPOCHS, set_data
 
 from experiment.tasks.calorie_task import CaloriePredictionTask
 from experiment.tasks.category_task import FoodClassificationTask
@@ -69,18 +70,33 @@ def print_sample(dataset: tf.data.Dataset):
     print("Foods Counts:", sorted_food_counts)
 
 
+def get_args():
+    parser = argparse.ArgumentParser(description='Compile a model for training or evaluation on some task.')
+    parser.add_argument('data', choices=["test", "prod"])
+    parser.add_argument('task', choices=["calories", "mass", "ingredients"])
+    parser.add_argument('model', choices=["vgg", "resnet", "xception"])
+    parser.add_argument('mode', choices=["train", "eval"], default="train")
+
+    args = parser.parse_args()
+
+    return args.data, args.task, args.model, args.mode
+
+
 if __name__ == "__main__":
-    # 1. Process arguments
-    if len(sys.argv) != 4:
-        raise Exception("Expected: [Env] [TaskName] [ModelName]")
-    env, task_name, model = sys.argv[1:]
+    data_env, task_name, model, mode = get_args()
 
     # 2. Extract task and model
-    set_env(env)
+    set_data(data_env)
     task_selected: Tasks = name2task[task_name]
 
     base_model = name2model[model]
 
     # 3. Create task resources and train.
     task: Task = task_selected.value(base_model, n_epochs=N_EPOCHS)
-    task.eval()
+
+    if mode == "train":
+        task.train()
+    elif mode == "eval":
+        task.eval()
+    else:
+        raise Exception("Unrecognized mode:" + mode)
