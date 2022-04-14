@@ -1,4 +1,6 @@
+import json
 import os
+import pprint
 from abc import ABC, abstractmethod
 from enum import Enum
 
@@ -6,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
-from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
@@ -137,12 +138,16 @@ class Task:
                        validation_data=self.validation_data(),
                        callbacks=[model_checkpoint_callback])
 
-    def get_validation_predictions(self):
-        self.model.summary()
-        x_test = [x for x, _ in self.test_data()]
-        y_test = [y for _, y in self.test_data()]
-        y_pred = self.model.predict(x_test)
-        return y_test, y_pred
+    def get_predictions(self, data):
+        batch_predictions = self.model.predict(data)
+
+        # TODO: Refactor
+        y_flat = []
+        for _, batch_y in data:
+            for y_vector in batch_y:
+                y_flat.append(y_vector)
+
+        return y_flat, batch_predictions
 
 
 class RegressionTask(Task, ABC):
@@ -151,7 +156,7 @@ class RegressionTask(Task, ABC):
         super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
 
     def eval(self):
-        y_test, y_pred = self.get_validation_predictions()
+        y_test, y_pred = self.get_predictions(self.test_data())
         y_true = np.concatenate(y_test, axis=0)
         if self.is_regression:
             mae = mean_absolute_error(y_true, y_pred)
@@ -163,11 +168,44 @@ class ClassificationTask(Task, ABC):
                  load_on_init=True):
         super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
 
-    def eval(self):
-        y_true, y_pred = self.get_validation_predictions()
-        y_pred = list(map(lambda pred: np.argmax(pred), y_pred))
-        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-        print("# True Negative: ", tn)
-        print("# True Positive: ", tp)
-        print("# False Positive: ", tn)
-        print("# False Negative: ", tn)
+    def eval(self, ):
+        food2Index = Food2Index()
+        y_test, y_pred = self.get_predictions(self.validation_data())  # no validation data on any class. task
+
+        predictions = []
+        labels = []
+
+        class_tp = {}
+        class_fp = {}
+        for test_vector, pred_vector in zip(y_test, y_pred):
+            pred = np.argmax(pred_vector)
+            label = np.argmax(test_vector)
+
+            predictions.append(pred)
+            labels.append(label)
+
+            if pred == label:
+                name = food2Index.get_ingredient(label)
+                if label in class_tp:
+                    class_tp[name] += 1
+                else:
+                    class_tp[name] = 1
+            else:
+                name = food2Index.get_ingredient(pred)
+                if pred in class_fp:
+                    class_fp[name] += 1
+                else:
+                    class_fp[name] = 1
+
+        print("eval", "-" * 25)
+        print("Labels:\t", labels)
+        print("Predictions", predictions)
+
+        print("*" * 10, "TP", "*" * 10)
+        pprint(class_tp)
+        print("*" * 10, "FP", "*" * 10)
+        pprint(class_fp)
+
+
+def pprint(obj):
+    print(json.dumps(obj, indent=4, sort_keys=True))
