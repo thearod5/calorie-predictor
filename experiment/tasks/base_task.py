@@ -1,5 +1,5 @@
 import os
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
 
 import matplotlib.pyplot as plt
@@ -104,6 +104,11 @@ class Task:
     def test_data(self):
         pass
 
+    @property
+    @abstractmethod
+    def eval(self):
+        pass
+
     def load_model(self):
         if self.is_regression:
             self.model.compile(optimizer="adam", loss="mse", metrics=["mae"])
@@ -132,19 +137,37 @@ class Task:
                        validation_data=self.validation_data(),
                        callbacks=[model_checkpoint_callback])
 
-    def evaluate(self):
+    def get_validation_predictions(self):
         self.model.summary()
         x_test = [x for x, _ in self.test_data()]
         y_test = [y for _, y in self.test_data()]
         y_pred = self.model.predict(x_test)
+        return y_test, y_pred
+
+
+class RegressionTask(Task, ABC):
+    def __init__(self, base_model: BaseModel, task_type: TaskType, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
+                 load_on_init=True):
+        super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
+
+    def eval(self):
+        y_test, y_pred = self.get_validation_predictions()
         y_true = np.concatenate(y_test, axis=0)
         if self.is_regression:
             mae = mean_absolute_error(y_true, y_pred)
             print("Test Mean Absolute Error:", mae)
-        else:
-            y_pred = list(map(lambda pred: np.argmax(pred), y_pred))
-            tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-            print("# True Negative: ", tn)
-            print("# True Positive: ", tp)
-            print("# False Positive: ", tn)
-            print("# False Negative: ", tn)
+
+
+class ClassificationTask(Task, ABC):
+    def __init__(self, base_model: BaseModel, task_type: TaskType, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
+                 load_on_init=True):
+        super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
+
+    def eval(self):
+        y_true, y_pred = self.get_validation_predictions()
+        y_pred = list(map(lambda pred: np.argmax(pred), y_pred))
+        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+        print("# True Negative: ", tn)
+        print("# True Positive: ", tp)
+        print("# False Positive: ", tn)
+        print("# False Negative: ", tn)

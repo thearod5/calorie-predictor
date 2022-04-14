@@ -1,17 +1,16 @@
 from cleaning.dataset import prepare_dataset, split_dataset
 from cleaning.food_images_dataset import FoodImagesDataset
-from cleaning.nutrition_dataset import Mode, NutritionDataset
 from cleaning.unimib_dataset import UnimibDataset
 from constants import MAXIMUM_BUFFER_SIZE, N_EPOCHS, RANDOM_SEED, TEST_SPLIT_SIZE
 from experiment.Food2Index import Food2Index
-from experiment.tasks.base_task import Task, TaskType
+from experiment.tasks.base_task import ClassificationTask, TaskType
 
 
-class FoodClassificationTask(Task):
+class FoodClassificationTask(ClassificationTask):
     def __init__(self, base_model, n_epochs=N_EPOCHS):
         super().__init__(base_model, TaskType.CLASSIFICATION, n_outputs=len(Food2Index()), n_epochs=n_epochs)
 
-        datasets = [NutritionDataset(Mode.INGREDIENTS), FoodImagesDataset(), UnimibDataset()]
+        datasets = [FoodImagesDataset(), UnimibDataset()]
         dataset = datasets[0].get_dataset(shuffle=False)
         image_count = len(datasets[0].get_image_paths())
         for d in datasets[1:]:

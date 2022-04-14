@@ -1,10 +1,10 @@
 from cleaning.eucstfd_dataset import EucstfdDataset
 from cleaning.nutrition_dataset import Mode, NutritionDataset
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
-from experiment.tasks.base_task import Task, TaskType
+from experiment.tasks.base_task import RegressionTask, TaskType
 
 
-class MassPredictionTask(Task):
+class MassPredictionTask(RegressionTask):
 
     def __init__(self, base_model, n_epochs=N_EPOCHS):
         super().__init__(base_model, TaskType.REGRESSION, n_epochs=n_epochs)
