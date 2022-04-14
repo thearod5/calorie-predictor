@@ -162,7 +162,7 @@ class RegressionTask(Task, ABC):
         super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
 
     def eval(self):
-        y_true, y_pred = self.get_predictions(self.validation_data())
+        y_true, y_pred = self.get_predictions(self.test_data())
 
         if self.is_regression:
             mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
