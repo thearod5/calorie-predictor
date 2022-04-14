@@ -120,7 +120,7 @@ class Task:
 
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
             print("Loading previous weights...")
-            self.model.load_weights(self.checkpoint_path)
+            self.model = tf.keras.models.load_model(self.checkpoint_path)
         print("Loading: " + self.base_model.value + " on " + self.__class__.__name__)
 
     def train(self):
@@ -156,7 +156,7 @@ class RegressionTask(Task, ABC):
         super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
 
     def eval(self):
-        y_test, y_pred = self.get_predictions(self.test_data())
+        y_test, y_pred = self.get_predictions(self.validation_data())
         y_true = np.concatenate(y_test, axis=0)
         if self.is_regression:
             mae = mean_absolute_error(y_true, y_pred)
