@@ -19,12 +19,12 @@ MAXIMUM_BUFFER_SIZE = 20000
 def get_data_dir():
     if ENV == "test":
         return os.path.join(PROJECT_DIR, 'data')
-    elif ENV == "dev":
-        return "/Volumes/Betito HDD/Datasets/calorie-predictor/processed"
-    else:
+    elif ENV == "prod":
         return os.path.join(PROJECT_DIR, "processed")
+    else:
+        raise Exception("Unknown data environment:" + ENV)
 
 
-def set_env(env: str):
+def set_data(test_env: str):
     global ENV
-    ENV = env
+    ENV = test_env

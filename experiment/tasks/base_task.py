@@ -1,12 +1,13 @@
+import json
 import os
-from abc import abstractmethod
+import pprint
+from abc import ABC, abstractmethod
 from enum import Enum
 
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
-from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
@@ -26,6 +27,7 @@ def convert_to_task(base_model_class, n_outputs: int):
     )
     classification_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-1].output)
     model = tf.keras.Model(inputs=base_model.input, outputs=classification_layer)
+
     return model
 
 
@@ -78,6 +80,8 @@ class Task:
                  n_epochs=N_EPOCHS,
                  load_weights=True,
                  load_on_init=True):
+        print("*" * 20, "Run Settings", "*" * 20)
+        print("Task:", self.__class__.__name__)
         self.base_model = base_model
         self.task_type = task_type
         self.load_weights = load_weights
@@ -88,6 +92,7 @@ class Task:
         self.is_regression = task_type == TaskType.REGRESSION
         if load_on_init:
             self.load_model()
+        print("*" * 50)
 
     @property
     @abstractmethod
@@ -104,6 +109,11 @@ class Task:
     def test_data(self):
         pass
 
+    @property
+    @abstractmethod
+    def eval(self):
+        pass
+
     def load_model(self):
         if self.is_regression:
             self.model.compile(optimizer="adam", loss="mse", metrics=["mae"])
@@ -111,11 +121,13 @@ class Task:
             self.model.compile(optimizer="adam",
                                loss=tf.keras.losses.CategoricalCrossentropy(),
                                metrics=["accuracy"])
-
+        weights = "Random"
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
-            print("Loading previous weights...")
-            self.model.load_weights(self.checkpoint_path)
-        print("Loading: " + self.base_model.value + " on " + self.__class__.__name__)
+            self.model = tf.keras.models.load_model(self.checkpoint_path)
+            weights = "Previous best on validation"
+
+        print("Model:", self.base_model.value)
+        print("Weights:", weights)
 
     def train(self):
         task_monitor = "val_mae" if self.is_regression else "val_accuracy"
@@ -132,19 +144,85 @@ class Task:
                        validation_data=self.validation_data(),
                        callbacks=[model_checkpoint_callback])
 
-    def evaluate(self):
-        self.model.summary()
-        x_test = [x for x, _ in self.test_data()]
-        y_test = [y for _, y in self.test_data()]
-        y_pred = self.model.predict(x_test)
-        y_true = np.concatenate(y_test, axis=0)
+    def get_predictions(self, data):
+        y_pred = self.model.predict(data)
+
+        # TODO: Refactor
+        y_true = []
+        for _, batch_y in data:
+            for y_vector in batch_y:
+                y_true.append(y_vector)
+
+        return y_true, y_pred
+
+
+class RegressionTask(Task, ABC):
+    def __init__(self, base_model: BaseModel, task_type: TaskType, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
+                 load_on_init=True):
+        super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
+
+    def eval(self):
+        y_true, y_pred = self.get_predictions(self.test_data())
+
         if self.is_regression:
-            mae = mean_absolute_error(y_true, y_pred)
+            mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
             print("Test Mean Absolute Error:", mae)
-        else:
-            y_pred = list(map(lambda pred: np.argmax(pred), y_pred))
-            tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-            print("# True Negative: ", tn)
-            print("# True Positive: ", tp)
-            print("# False Positive: ", tn)
-            print("# False Negative: ", tn)
+
+    def get_predictions(self, data):
+        """
+        Performs data conversion from 1D tensors to single numbers.
+        :param data: The data to get predictions from.
+        :return: The true y values and the predicted values respectively.
+        """
+        y_true, y_pred = super().get_predictions(data)
+        y_true = list(map(lambda v: v.numpy(), y_true))  # unpacks 1D vector into single number
+        y_true = np.array(y_true)
+        return y_true, y_pred
+
+
+class ClassificationTask(Task, ABC):
+    def __init__(self, base_model: BaseModel, task_type: TaskType, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
+                 load_on_init=True):
+        super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
+
+    def eval(self, ):
+        food2Index = Food2Index()
+        y_test, y_pred = self.get_predictions(self.validation_data())  # no validation data on any class. task
+
+        predictions = []
+        labels = []
+
+        class_tp = {}
+        class_fp = {}
+        for test_vector, pred_vector in zip(y_test, y_pred):
+            pred = np.argmax(pred_vector)
+            label = np.argmax(test_vector)
+
+            predictions.append(pred)
+            labels.append(label)
+
+            if pred == label:
+                name = food2Index.get_ingredient(label)
+                if label in class_tp:
+                    class_tp[name] += 1
+                else:
+                    class_tp[name] = 1
+            else:
+                name = food2Index.get_ingredient(pred)
+                if pred in class_fp:
+                    class_fp[name] += 1
+                else:
+                    class_fp[name] = 1
+
+        print("eval", "-" * 25)
+        print("Labels:\t", labels)
+        print("Predictions", predictions)
+
+        print("*" * 10, "TP", "*" * 10)
+        pprint(class_tp)
+        print("*" * 10, "FP", "*" * 10)
+        pprint(class_fp)
+
+
+def pprint(obj):
+    print(json.dumps(obj, indent=4, sort_keys=True))
