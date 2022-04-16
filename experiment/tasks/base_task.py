@@ -63,7 +63,6 @@ def create_checkpoint_path(task, base_model: BaseModel):
     return os.path.join(PROJECT_DIR, "results", "checkpoints", task_name, base_model_name, "cp.ckpt")
 
 
-
 def sample_data(data: Dataset):
     ingredient_index_map = Food2Index()
     for i, (image, label) in enumerate(data.take(9)):
@@ -213,15 +212,13 @@ class ClassificationTask(Task, ABC):
             pred = np.argmax(pred_vector)
             label = np.argmax(test_vector)
 
-            predictions.append(pred)
-            labels.append(label)
+            pred_name = food2index.get_ingredient(pred)
+            label_name = food2index.get_ingredient(label)
 
-            if pred == label:
-                name = food2index.get_ingredient(label)
-                dict_ = class_tp
-            else:
-                name = food2index.get_ingredient(pred)
-                dict_ = class_fp
+            predictions.append(pred_name)
+            labels.append(label_name)
+
+            name, dict_ = (label_name, class_tp) if pred == label else (pred_name, class_fp)
 
             if name not in dict_:
                 dict_[name] = 0
