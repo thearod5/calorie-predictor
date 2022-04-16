@@ -8,7 +8,7 @@ from experiment.tasks.base_task import ClassificationTask, TaskType
 
 class FoodClassificationTask(ClassificationTask):
     def __init__(self, base_model, n_epochs=N_EPOCHS):
-        super().__init__(base_model, TaskType.CLASSIFICATION, n_outputs=len(Food2Index()), n_epochs=n_epochs)
+        super().__init__(base_model, n_outputs=len(Food2Index()), n_epochs=n_epochs)
 
         datasets = [FoodImagesDataset(), UnimibDataset()]
         dataset = datasets[0].get_dataset(shuffle=False)
@@ -24,11 +24,11 @@ class FoodClassificationTask(ClassificationTask):
         self._validation = validation
         self._test = None
 
-    def training_data(self):
+    def get_training_data(self):
         return self._train
 
-    def validation_data(self):
+    def get_validation_data(self):
         return self._validation
 
-    def test_data(self):
+    def get_test_data(self):
         return self._test

@@ -16,21 +16,6 @@ from experiment.Food2Index import Food2Index
 from experiment.tasks.test_model import test_model
 
 
-def convert_to_task(base_model_class, n_outputs: int):
-    inputs = tf.keras.Input(shape=INPUT_SHAPE)
-    base_model = base_model_class(
-        pooling='avg',
-        include_top=False,
-        input_shape=INPUT_SHAPE,
-        weights="imagenet",
-        input_tensor=inputs
-    )
-    classification_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-1].output)
-    model = tf.keras.Model(inputs=base_model.input, outputs=classification_layer)
-
-    return model
-
-
 class TaskMode(Enum):
     TRAIN = "TRAIN"
     EVAL = "EVAL"
@@ -57,10 +42,26 @@ BASE_MODELS = {
 }
 
 
+def convert_to_task(base_model_class, n_outputs: int):
+    inputs = tf.keras.Input(shape=INPUT_SHAPE)
+    base_model = base_model_class(
+        pooling='avg',
+        include_top=False,
+        input_shape=INPUT_SHAPE,
+        weights="imagenet",
+        input_tensor=inputs
+    )
+    classification_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-1].output)
+    model = tf.keras.Model(inputs=base_model.input, outputs=classification_layer)
+
+    return model
+
+
 def create_checkpoint_path(task, base_model: BaseModel):
     task_name = task.__class__.__name__
     base_model_name = base_model.value
     return os.path.join(PROJECT_DIR, "results", "checkpoints", task_name, base_model_name, "cp.ckpt")
+
 
 
 def sample_data(data: Dataset):
@@ -72,10 +73,15 @@ def sample_data(data: Dataset):
         plt.axis("off")
 
 
+def pprint(obj, title=None):
+    if title:
+        print("*" * 10, title, "*" * 10)
+    print(json.dumps(obj, indent=4, sort_keys=True))
+
+
 class Task:
     def __init__(self,
                  base_model: BaseModel,
-                 task_type: TaskType,
                  n_outputs=1,
                  n_epochs=N_EPOCHS,
                  load_weights=True,
@@ -83,44 +89,53 @@ class Task:
         print("*" * 20, "Run Settings", "*" * 20)
         print("Task:", self.__class__.__name__)
         self.base_model = base_model
-        self.task_type = task_type
         self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
         self.checkpoint_path = create_checkpoint_path(self, base_model)
         self.model = convert_to_task(BASE_MODELS[base_model], n_outputs)
-        self.is_regression = task_type == TaskType.REGRESSION
         if load_on_init:
             self.load_model()
         print("*" * 50)
 
     @property
     @abstractmethod
-    def training_data(self):
+    def loss_function(self):
         pass
 
     @property
     @abstractmethod
-    def validation_data(self):
+    def metric(self):
         pass
 
     @property
     @abstractmethod
-    def test_data(self):
+    def task_type(self):
         pass
 
     @property
+    @abstractmethod
+    def task_mode(self):
+        pass
+
+    @abstractmethod
+    def get_training_data(self):
+        pass
+
+    @abstractmethod
+    def get_validation_data(self):
+        pass
+
+    @abstractmethod
+    def get_test_data(self):
+        pass
+
     @abstractmethod
     def eval(self):
         pass
 
     def load_model(self):
-        if self.is_regression:
-            self.model.compile(optimizer="adam", loss="mse", metrics=["mae"])
-        else:
-            self.model.compile(optimizer="adam",
-                               loss=tf.keras.losses.CategoricalCrossentropy(),
-                               metrics=["accuracy"])
+        self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
         weights = "Random"
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
             self.model = tf.keras.models.load_model(self.checkpoint_path)
@@ -130,43 +145,38 @@ class Task:
         print("Weights:", weights)
 
     def train(self):
-        task_monitor = "val_mae" if self.is_regression else "val_accuracy"
-        task_mode = "min" if self.is_regression else "max"
+        task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
             filepath=self.checkpoint_path,
             monitor=task_monitor,
-            mode=task_mode,
+            mode=self.task_mode,
             verbose=1,
             save_best_only=True)
 
-        self.model.fit(self.training_data(),
+        self.model.fit(self.get_training_data(),
                        epochs=self.n_epochs,
-                       validation_data=self.validation_data(),
+                       validation_data=self.get_validation_data(),
                        callbacks=[model_checkpoint_callback])
 
     def get_predictions(self, data):
         y_pred = self.model.predict(data)
-
-        # TODO: Refactor
-        y_true = []
-        for _, batch_y in data:
-            for y_vector in batch_y:
-                y_true.append(y_vector)
-
+        y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
 
 
 class RegressionTask(Task, ABC):
-    def __init__(self, base_model: BaseModel, task_type: TaskType, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
-                 load_on_init=True):
-        super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
+    task_type = TaskType.REGRESSION
+    loss_function = "mse"
+    metric = "mae"
+    task_mode = "min"
+
+    def __init__(self, base_model: BaseModel, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True, load_on_init=True):
+        super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
 
     def eval(self):
-        y_true, y_pred = self.get_predictions(self.test_data())
-
-        if self.is_regression:
-            mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
-            print("Test Mean Absolute Error:", mae)
+        y_true, y_pred = self.get_predictions(self.get_test_data())
+        mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
+        print("Test Mean Absolute Error:", mae)
 
     def get_predictions(self, data):
         """
@@ -181,13 +191,18 @@ class RegressionTask(Task, ABC):
 
 
 class ClassificationTask(Task, ABC):
-    def __init__(self, base_model: BaseModel, task_type: TaskType, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
+    task_type = TaskType.CLASSIFICATION
+    loss_function = tf.keras.losses.CategoricalCrossentropy()
+    metric = "accuracy"
+    task_mode = "max"
+
+    def __init__(self, base_model: BaseModel, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
                  load_on_init=True):
-        super().__init__(base_model, task_type, n_outputs, n_epochs, load_weights, load_on_init)
+        super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
 
     def eval(self, ):
-        food2Index = Food2Index()
-        y_test, y_pred = self.get_predictions(self.validation_data())  # no validation data on any class. task
+        food2index = Food2Index()
+        y_test, y_pred = self.get_predictions(self.get_validation_data())  # no validation data on any class. task
 
         predictions = []
         labels = []
@@ -202,27 +217,19 @@ class ClassificationTask(Task, ABC):
             labels.append(label)
 
             if pred == label:
-                name = food2Index.get_ingredient(label)
-                if label in class_tp:
-                    class_tp[name] += 1
-                else:
-                    class_tp[name] = 1
+                name = food2index.get_ingredient(label)
+                dict_ = class_tp
             else:
-                name = food2Index.get_ingredient(pred)
-                if pred in class_fp:
-                    class_fp[name] += 1
-                else:
-                    class_fp[name] = 1
+                name = food2index.get_ingredient(pred)
+                dict_ = class_fp
 
-        print("eval", "-" * 25)
+            if name not in dict_:
+                dict_[name] = 0
+            dict_[name] += 1
+
+        print("Eval", "-" * 25)
         print("Labels:\t", labels)
         print("Predictions", predictions)
 
-        print("*" * 10, "TP", "*" * 10)
-        pprint(class_tp)
-        print("*" * 10, "FP", "*" * 10)
-        pprint(class_fp)
-
-
-def pprint(obj):
-    print(json.dumps(obj, indent=4, sort_keys=True))
+        pprint(class_tp, "TP")
+        pprint(class_fp, "FP")
