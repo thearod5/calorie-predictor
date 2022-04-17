@@ -11,12 +11,13 @@ class EucstfdDataset(Dataset):
     id_col = 'id'
     split_characters = ['S', 'T']
 
-    def __init__(self):
+    def __init__(self, use_ingredients_mass=False):
         """
         constructor
         """
         super().__init__('eucstfd', 'density.xls')
         self._food_info = None
+        self.use_ingredients_mass = use_ingredients_mass
 
     def get_food_info(self) -> pd.DataFrame:
         """
@@ -37,4 +38,8 @@ class EucstfdDataset(Dataset):
         for char in self.split_characters:
             image_name = image_name.split(char)[0]  # TODO probably a better way to do this but idk
         labels = self.get_food_info().loc[image_name][self.label_col]
-        return list(labels) if isinstance(labels, pd.Series) else [labels]
+        if self.use_ingredients_mass:
+            labels = list(labels) if isinstance(labels, pd.Series) else [labels]
+        elif isinstance(labels, pd.Series):
+            labels = sum(labels)
+        return labels
