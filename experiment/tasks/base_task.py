@@ -72,12 +72,6 @@ def sample_data(data: Dataset):
         plt.axis("off")
 
 
-def pprint(obj, title=None):
-    if title:
-        print("*" * 10, title, "*" * 10)
-    print(json.dumps(obj, indent=4, sort_keys=True))
-
-
 class Task:
     def __init__(self,
                  base_model: BaseModel,
@@ -208,6 +202,7 @@ class ClassificationTask(Task, ABC):
 
         class_tp = {}
         class_fp = {}
+        class_fn = {}
         for test_vector, pred_vector in zip(y_test, y_pred):
             pred = np.argmax(pred_vector)
             label = np.argmax(test_vector)
@@ -218,15 +213,33 @@ class ClassificationTask(Task, ABC):
             predictions.append(pred_name)
             labels.append(label_name)
 
-            name, dict_ = (label_name, class_tp) if pred == label else (pred_name, class_fp)
+            if pred == label:
+                increment_dict_entry(class_tp, label_name)
+            else:
+                increment_dict_entry(class_fp, pred_name, label_name)
+                increment_dict_entry(class_fn, label_name, pred_name)
 
-            if name not in dict_:
-                dict_[name] = 0
-            dict_[name] += 1
-
-        print("Eval", "-" * 25)
-        print("Labels:\t", labels)
-        print("Predictions", predictions)
+        print("Eval" + "-" * 25)
 
         pprint(class_tp, "TP")
         pprint(class_fp, "FP")
+        pprint(class_fn, "FN")
+
+
+def initialize_dict_entry(dict_, key, init_val=0):
+    if key not in dict_:
+        dict_[key] = init_val
+    return dict_, key
+
+
+def increment_dict_entry(dict_, key, child_key=None):
+    dict_, key = initialize_dict_entry(dict_, key, init_val={} if child_key else 0)
+    if child_key:
+        dict_, key = initialize_dict_entry(dict_[key], child_key)
+    dict_[key] += 1
+
+
+def pprint(obj, title=None):
+    if title:
+        print("*" * 10, title, "*" * 10)
+    print(json.dumps(obj, indent=4, sort_keys=True))
