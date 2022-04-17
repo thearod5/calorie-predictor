@@ -16,8 +16,8 @@ from enum import Enum
 
 from constants import N_EPOCHS, set_data
 
-from experiment.tasks.calorie_task import CaloriePredictionTask
-from experiment.tasks.category_task import FoodClassificationTask
+from experiment.tasks.calories_task import CaloriePredictionTask
+from experiment.tasks.ingredients_task import FoodClassificationTask
 from experiment.tasks.mass_task import MassPredictionTask
 from experiment.tasks.base_task import BaseModel, Task
 from experiment.tasks.test_task import TestTask

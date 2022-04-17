@@ -114,18 +114,24 @@ class Dataset:
             self._images = path_ds.map(decode_image_from_path, num_parallel_calls=AUTOTUNE)
         return self._images
 
-    def split_to_train_test(self, test_split_size: float = 0) -> List[tf.data.Dataset]:
+    def split_to_train_test(self, test_split_size: float = 0, shuffle=True) -> List[tf.data.Dataset]:
         """
         gets a zipped dataset of image, label pairs which are split into two (if spit_size = 0, only one dataset is created)
+        :param shuffle: shuffles data if True
         :param test_split_size: the percent of the data to go in one split
         :return: list of dataset splits
         """
         image_count = len(self.get_image_paths())
-        ds = self.get_dataset()
+        ds = self.get_dataset(shuffle)
         d_splits = split_dataset(ds, image_count, test_split_size) if test_split_size > 0 else [ds]
         return [prepare_dataset(d_split) for d_split in d_splits]
 
     def get_dataset(self, shuffle=True) -> Dataset:
+        """
+        gets a zipped dataset of image, label pairs
+       :param shuffle: shuffles data if True
+       :return: the dataset
+       """
         image_count = len(self.get_image_paths())
         ds = tf.data.Dataset.zip((self.get_images(), self.get_labels()))
         if shuffle:
