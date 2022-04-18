@@ -8,6 +8,16 @@ from tensorflow import Tensor
 from cleaning.dataset import Dataset, get_name_from_path
 from constants import LOG_SKIPPED_ENTRIES
 from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
+import logging
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 
 class Dish:
@@ -108,9 +118,8 @@ class NutritionDataset(Dataset):
                     dish_mode_value = getattr(dish, self._mode.value)
                     if dish_id in processed_ids or not is_mode_value_valid(dish_mode_value):
                         if LOG_SKIPPED_ENTRIES:
-                            print(dish_id, ": was already processed or has invalid value for mode", self._mode)
+                            logging.debug(dish_id, ": was already processed or has invalid value for mode", self._mode)
                         continue
-                    # print(label_file_name, dish_mode_value)
                     self._dishes[dish_id] = self._parse_row_into_dish(row)
                     processed_ids.append(dish_id)
         self.food2index.save()
