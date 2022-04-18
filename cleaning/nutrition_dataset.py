@@ -6,12 +6,16 @@ from typing import *
 from tensorflow import Tensor
 
 from cleaning.dataset import Dataset, get_name_from_path
-from constants import LOG_SKIPPED_ENTRIES
+from constants import LOG_SKIPPED_ENTRIES, LOG_CONFIG_FILE
 from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
-import logging
 import sys
 
-logger = logging.getLogging()
+import logging
+import logging.config
+
+logging.config.fileConfig(LOG_CONFIG_FILE)
+logger = logging.getLogger()
+
 
 class Dish:
 

@@ -11,14 +11,15 @@ from keras.callbacks import ModelCheckpoint
 from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
-from constants import INPUT_SHAPE, N_EPOCHS, PROJECT_DIR
+from constants import INPUT_SHAPE, N_EPOCHS, PROJECT_DIR, LOG_CONFIG_FILE
 from experiment.Food2Index import Food2Index
 from experiment.tasks.test_model import test_model
 
 import logging
-import sys
+import logging.config
 
-logger = logging.getLogging()
+logging.config.fileConfig(LOG_CONFIG_FILE)
+logger = logging.getLogger()
 
 
 class TaskMode(Enum):
