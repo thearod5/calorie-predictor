@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
+from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
@@ -203,6 +204,7 @@ class ClassificationTask(Task, ABC):
         class_tp = {}
         class_fp = {}
         class_fn = {}
+
         for test_vector, pred_vector in zip(y_test, y_pred):
             pred = np.argmax(pred_vector)
             label = np.argmax(test_vector)
@@ -220,7 +222,9 @@ class ClassificationTask(Task, ABC):
                 increment_dict_entry(class_fn, label_name, pred_name)
 
         print("Eval" + "-" * 25)
-
+        matrix = confusion_matrix(labels, predictions)
+        accuracy_per_class = matrix.diagonal() / matrix.sum(axis=1)
+        print("Accuracy:", accuracy_per_class)
         pprint(class_tp, "TP")
         pprint(class_fp, "FP")
         pprint(class_fn, "FN")

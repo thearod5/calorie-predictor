@@ -4,9 +4,6 @@ import sys
 # makes this runnable from command line
 from typing import Dict
 
-import numpy as np
-
-from experiment.Food2Index import Food2Index
 from experiment.tasks.classification_sample_builder import ClassificationSubsetTask
 
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -22,7 +19,6 @@ from experiment.tasks.classification_task import FoodClassificationTask
 from experiment.tasks.mass_task import MassPredictionTask
 from experiment.tasks.base_task import BaseModel, Task
 from experiment.tasks.test_task import TestTask
-import tensorflow as tf
 
 warnings.filterwarnings("ignore")
 
@@ -48,29 +44,6 @@ name2model = {
     "xception": BaseModel.XCEPTION,
     "test": BaseModel.TEST
 }
-
-
-def print_sample(dataset: tf.data.Dataset):
-    food2index = Food2Index()
-    food2count = {}
-    for batch_images, batch_labels in dataset:
-        for batch_index in range(batch_images.shape[0]):
-            label = batch_labels[batch_index]
-            label_indices = np.where(label == 1)[0]
-            # image = batch_images[batch_index]
-            # plt.imshow(np.asarray(image).astype(np.uint8))
-            # plt.show()
-            foods = []
-            for label_index in label_indices:
-                food_name = food2index.get_ingredient(label_index)
-                foods.append(food_name)
-                if food_name in food2count:
-                    food2count[food_name] += 1
-                else:
-                    food2count[food_name] = 1
-
-    sorted_food_counts = {k: v for k, v in sorted(food2count.items(), key=lambda item: item[1])}
-    print("Foods Counts:", sorted_food_counts)
 
 
 def get_args():
