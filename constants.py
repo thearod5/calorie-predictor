@@ -18,6 +18,7 @@ LOG_CONFIG_FILE = os.path.join(PROJECT_DIR, 'logging_utils', 'logging.conf')
 LOG_CHAR = "*"
 HEADING_CHARS = LOG_CHAR * 20
 SUBHEADING_CHARS = "-" * 10
+CLASSIFICATION_DATASETS = ["unimib", "food_images"]
 
 
 def get_data_dir():

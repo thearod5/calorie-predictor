@@ -3,7 +3,7 @@ from typing import *
 
 import cv2 as cv
 import tensorflow as tf
-from tensorflow.python.data import AUTOTUNE, Dataset
+from tensorflow.python.data import AUTOTUNE
 
 from constants import *
 from experiment.Food2Index import Food2Index
@@ -55,7 +55,6 @@ def prepare_dataset(dataset: tf.data.Dataset) -> tf.data.Dataset:
 
 
 class Dataset:
-
     def __init__(self, dataset_dirname: str, label_filename: str):
         """
         constructor
@@ -126,7 +125,7 @@ class Dataset:
         d_splits = split_dataset(ds, image_count, test_split_size) if test_split_size > 0 else [ds]
         return [prepare_dataset(d_split) for d_split in d_splits]
 
-    def get_dataset(self, shuffle=True) -> Dataset:
+    def get_dataset(self, shuffle=True) -> tf.data.Dataset:
         """
         gets a zipped dataset of image, label pairs
        :param shuffle: shuffles data if True
