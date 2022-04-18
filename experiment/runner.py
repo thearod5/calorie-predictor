@@ -46,6 +46,29 @@ name2model = {
 }
 
 
+def get_sorted_food_counts(dataset: tf.data.Dataset):
+    food2index = Food2Index()
+    for batch_images, batch_labels in dataset:
+    food2count = {}
+        for batch_index in range(batch_images.shape[0]):
+            label = batch_labels[batch_index]
+            label_indices = np.where(label == 1)[0]
+            # image = batch_images[batch_index]
+            # plt.imshow(np.asarray(image).astype(np.uint8))
+            # plt.show()
+            foods = []
+            for label_index in label_indices:
+                food_name = food2index.get_ingredient(label_index)
+                if food_name in food2count:
+                foods.append(food_name)
+                    food2count[food_name] += 1
+                else:
+                    food2count[food_name] = 1
+
+
+    return sorted_food_counts
+    sorted_food_counts = {k: v for k, v in sorted(food2count.items(), key=lambda item: item[1])}
+
 def get_args():
     parser = argparse.ArgumentParser(description='Compile a model for training or evaluation on some task.')
     parser.add_argument('data', choices=["test", "prod"])

@@ -12,9 +12,16 @@ from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
-from constants import INPUT_SHAPE, N_EPOCHS, PROJECT_DIR
+from constants import INPUT_SHAPE, N_EPOCHS, PROJECT_DIR, LOG_CONFIG_FILE
 from experiment.Food2Index import Food2Index
 from experiment.tasks.test_model import test_model
+from logging_utils.utils import *
+
+import logging
+import logging.config
+
+logging.config.fileConfig(LOG_CONFIG_FILE)
+logger = logging.getLogger()
 
 
 class TaskMode(Enum):
@@ -80,8 +87,9 @@ class Task:
                  n_epochs=N_EPOCHS,
                  load_weights=True,
                  load_on_init=True):
-        print("*" * 20, "Run Settings", "*" * 20)
-        print("Task:", self.__class__.__name__)
+        section_heading = "Run Settings"
+        logger.info(format_header(section_heading))
+        logger.info("Task: " + self.__class__.__name__)
         self.base_model = base_model
         self.load_weights = load_weights
         self.n_outputs = n_outputs
@@ -90,6 +98,7 @@ class Task:
         self.model = convert_to_task(BASE_MODELS[base_model], n_outputs)
         if load_on_init:
             self.load_model()
+        logger.info(get_section_break(section_heading))
 
     @property
     @abstractmethod
@@ -134,8 +143,8 @@ class Task:
             self.model = tf.keras.models.load_model(self.checkpoint_path)
             weights = "Previous best on validation"
 
-        print("Model:", self.base_model.value)
-        print("Weights:", weights)
+        logger.info(format_name_val_info("Model", self.base_model.value))
+        logger.info(format_name_val_info("Weights", weights))
 
     def train(self):
         print("*" * 50)
@@ -170,7 +179,7 @@ class RegressionTask(Task, ABC):
     def eval(self):
         y_true, y_pred = self.get_predictions(self.get_test_data())
         mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
-        print("Test Mean Absolute Error:", mae)
+        logger.info(format_name_val_info("Test Mean Absolute Error", mae))
 
     def get_predictions(self, data):
         """
@@ -221,13 +230,13 @@ class ClassificationTask(Task, ABC):
                 increment_dict_entry(class_fp, pred_name, label_name)
                 increment_dict_entry(class_fn, label_name, pred_name)
 
-        print("Eval" + "-" * 25)
+        logger.info(format_header("Eval"))
         matrix = confusion_matrix(labels, predictions)
         accuracy_per_class = matrix.diagonal() / matrix.sum(axis=1)
         print("Accuracy:", accuracy_per_class)
-        pprint(class_tp, "TP")
-        pprint(class_fp, "FP")
-        pprint(class_fn, "FN")
+        logger.info(format_eval_results(class_tp, "TP"))
+        logger.info(format_eval_results(class_fp, "FP"))
+        logger.info(format_eval_results(class_fn, "FN"))
 
 
 def initialize_dict_entry(dict_, key, init_val=0):
@@ -243,7 +252,4 @@ def increment_dict_entry(dict_, key, child_key=None):
     dict_[key] += 1
 
 
-def pprint(obj, title=None):
-    if title:
-        print("*" * 10, title, "*" * 10)
-    print(json.dumps(obj, indent=4, sort_keys=True))
+
