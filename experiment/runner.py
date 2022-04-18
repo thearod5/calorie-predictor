@@ -47,7 +47,7 @@ name2model = {
 }
 
 
-def print_sample(dataset: tf.data.Dataset):
+def get_sorted_food_counts(dataset: tf.data.Dataset):
     food2index = Food2Index()
     food2count = {}
     for batch_images, batch_labels in dataset:
@@ -67,7 +67,7 @@ def print_sample(dataset: tf.data.Dataset):
                     food2count[food_name] = 1
 
     sorted_food_counts = {k: v for k, v in sorted(food2count.items(), key=lambda item: item[1])}
-    print("Foods Counts:", sorted_food_counts)
+    return sorted_food_counts
 
 
 def get_args():
