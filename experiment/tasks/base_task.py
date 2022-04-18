@@ -89,7 +89,6 @@ class Task:
         self.model = convert_to_task(BASE_MODELS[base_model], n_outputs)
         if load_on_init:
             self.load_model()
-        print("*" * 50)
 
     @property
     @abstractmethod
@@ -138,6 +137,7 @@ class Task:
         print("Weights:", weights)
 
     def train(self):
+        print("*" * 50)
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
             filepath=self.checkpoint_path,
