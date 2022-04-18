@@ -4,20 +4,24 @@ import sys
 # makes this runnable from command line
 from typing import Dict
 
+import tensorflow as tf
+
+from constants import N_EPOCHS
+from experiment.Food2Index import Food2Index
 from experiment.tasks.classification_sample_builder import ClassificationSubsetTask
 
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.append(path_to_src)
 
 import warnings
-from enum import Enum
+import numpy as np
 
-from constants import N_EPOCHS, set_data
+from enum import Enum
 
 from experiment.tasks.calories_task import CaloriePredictionTask
 from experiment.tasks.classification_task import FoodClassificationTask
 from experiment.tasks.mass_task import MassPredictionTask
-from experiment.tasks.base_task import BaseModel, Task
+from experiment.tasks.base_task import BaseModel, Task, logger, set_data
 from experiment.tasks.test_task import TestTask
 
 warnings.filterwarnings("ignore")
@@ -49,25 +53,22 @@ name2model = {
 def get_sorted_food_counts(dataset: tf.data.Dataset):
     food2index = Food2Index()
     for batch_images, batch_labels in dataset:
-    food2count = {}
-        for batch_index in range(batch_images.shape[0]):
-            label = batch_labels[batch_index]
-            label_indices = np.where(label == 1)[0]
-            # image = batch_images[batch_index]
-            # plt.imshow(np.asarray(image).astype(np.uint8))
-            # plt.show()
-            foods = []
-            for label_index in label_indices:
-                food_name = food2index.get_ingredient(label_index)
-                if food_name in food2count:
+        food2count = {}
+    for batch_index in range(batch_images.shape[0]):
+        label = batch_labels[batch_index]
+        label_indices = np.where(label == 1)[0]
+        foods = []
+        for label_index in label_indices:
+            food_name = food2index.get_ingredient(label_index)
+            if food_name in food2count:
                 foods.append(food_name)
-                    food2count[food_name] += 1
-                else:
-                    food2count[food_name] = 1
+            food2count[food_name] += 1
+        else:
+            food2count[food_name] = 1
 
-
-    return sorted_food_counts
     sorted_food_counts = {k: v for k, v in sorted(food2count.items(), key=lambda item: item[1])}
+    return sorted_food_counts
+
 
 def get_args():
     parser = argparse.ArgumentParser(description='Compile a model for training or evaluation on some task.')
@@ -75,6 +76,7 @@ def get_args():
     parser.add_argument('task', choices=name2task.keys())
     parser.add_argument('model', choices=["vgg", "resnet", "xception"])
     parser.add_argument('mode', choices=["train", "eval"], default="train")
+    parser.add_argument('--dataset')
 
     return parser.parse_args()
 
@@ -94,10 +96,11 @@ if __name__ == "__main__":
 
     # 3. Create task resources and train.
     task: Task = task_selected.value(base_model, n_epochs=N_EPOCHS)
-
+    logger.info("Data Env: %s" % data_env)
     if mode == "train":
         task.train()
     elif mode == "eval":
-        task.eval()
+        dataset_name = args.dataset
+        task.eval(dataset_name)
     else:
         raise Exception("Unrecognized mode:" + mode)

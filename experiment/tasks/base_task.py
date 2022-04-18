@@ -1,6 +1,4 @@
-import json
-import os
-import pprint
+import logging.config
 from abc import ABC, abstractmethod
 from enum import Enum
 
@@ -12,13 +10,9 @@ from sklearn.metrics import confusion_matrix
 from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
-from constants import INPUT_SHAPE, N_EPOCHS, PROJECT_DIR, LOG_CONFIG_FILE
 from experiment.Food2Index import Food2Index
 from experiment.tasks.test_model import test_model
 from logging_utils.utils import *
-
-import logging
-import logging.config
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()
@@ -121,6 +115,10 @@ class Task:
         pass
 
     @abstractmethod
+    def get_eval_dataset(self, name: str) -> [str]:
+        pass
+
+    @abstractmethod
     def get_training_data(self):
         pass
 
@@ -133,7 +131,7 @@ class Task:
         pass
 
     @abstractmethod
-    def eval(self):
+    def eval(self, dataset):
         pass
 
     def load_model(self):
@@ -147,7 +145,7 @@ class Task:
         logger.info(format_name_val_info("Weights", weights))
 
     def train(self):
-        print("*" * 50)
+        print("*" * 25, "Training", "*" * 25)
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
             filepath=self.checkpoint_path,
@@ -176,7 +174,7 @@ class RegressionTask(Task, ABC):
     def __init__(self, base_model: BaseModel, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True, load_on_init=True):
         super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
 
-    def eval(self):
+    def eval(self, _):
         y_true, y_pred = self.get_predictions(self.get_test_data())
         mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
         logger.info(format_name_val_info("Test Mean Absolute Error", mae))
@@ -203,9 +201,13 @@ class ClassificationTask(Task, ABC):
                  load_on_init=True):
         super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
 
-    def eval(self, ):
+    def eval(self, dataset_name):
+        logger.info(format_header("Eval"))
+        print("Dataset:", dataset_name)
+        data = self.get_eval_dataset(dataset_name)
         food2index = Food2Index()
-        y_test, y_pred = self.get_predictions(self.get_validation_data())  # no validation data on any class. task
+
+        y_test, y_pred = self.get_predictions(data)  # no validation data on any class. task
 
         predictions = []
         labels = []
@@ -230,13 +232,23 @@ class ClassificationTask(Task, ABC):
                 increment_dict_entry(class_fp, pred_name, label_name)
                 increment_dict_entry(class_fn, label_name, pred_name)
 
-        logger.info(format_header("Eval"))
-        matrix = confusion_matrix(labels, predictions)
-        accuracy_per_class = matrix.diagonal() / matrix.sum(axis=1)
-        print("Accuracy:", accuracy_per_class)
+        print_metrics(labels, predictions)
         logger.info(format_eval_results(class_tp, "TP"))
         logger.info(format_eval_results(class_fp, "FP"))
         logger.info(format_eval_results(class_fn, "FN"))
+
+
+def print_metrics(labels, predictions):
+    matrix = confusion_matrix(labels, predictions)
+    FP = matrix.sum(axis=0) - np.diag(matrix)
+    FN = matrix.sum(axis=1) - np.diag(matrix)
+    TP = np.diag(matrix)
+    TN = matrix.sum() - (FP + FN + TP)
+    logger.info("Predictions: %s" % len(predictions))
+    logger.info("False Positive: %s" % FP.sum())
+    logger.info("False Negatives: %s" % FN.sum())
+    logger.info("True Positive: %s" % TP.sum())
+    logger.info("True Negative: %s" % TN.sum())
 
 
 def initialize_dict_entry(dict_, key, init_val=0):
@@ -250,6 +262,3 @@ def increment_dict_entry(dict_, key, child_key=None):
     if child_key:
         dict_, key = initialize_dict_entry(dict_[key], child_key)
     dict_[key] += 1
-
-
-
