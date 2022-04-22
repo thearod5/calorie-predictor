@@ -19,6 +19,9 @@ LOG_CHAR = "*"
 HEADING_CHARS = LOG_CHAR * 20
 SUBHEADING_CHARS = "-" * 10
 CLASSIFICATION_DATASETS = ["unimib", "food_images"]
+BEST_MASS_MODEL = 'xception'
+BEST_CLASSIFICATION_MODEL = 'xception'
+N_HIDDEN = 100
 
 
 def get_data_dir():

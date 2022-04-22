@@ -5,6 +5,7 @@ from experiment.tasks.base_task import RegressionTask, TaskType
 
 
 class CaloriePredictionTask(RegressionTask):
+
     def __init__(self, base_model, n_epochs=N_EPOCHS):
         super().__init__(base_model, n_epochs=n_epochs)
         dataset = NutritionDataset(Mode.CALORIE)
@@ -22,3 +23,9 @@ class CaloriePredictionTask(RegressionTask):
 
     def get_test_data(self):
         return self._test
+
+    def get_eval_dataset(self, name: str) -> [str]:
+        pass  # TODO
+
+
+
