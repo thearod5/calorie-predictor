@@ -11,7 +11,8 @@ from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
 from experiment.Food2Index import Food2Index
-from experiment.models.base_models import BASE_MODELS, BaseModel, create_checkpoint_path, PRE_TRAINED_MODELS
+from experiment.models.base_models import BASE_MODELS, BaseModel, PRE_TRAINED_MODELS
+from experiment.models.checkpoint_creator import create_checkpoint_path
 from logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
@@ -37,7 +38,8 @@ def sample_data(data: Dataset):
         plt.axis("off")
 
 
-def make_model(base_model_class, n_outputs: int, pre_trained_model=True):
+def make_model(base_model_name, n_outputs: int, task_name, pre_trained_model=True):
+    base_model_class = BASE_MODELS[base_model_name]
     if pre_trained_model:
         inputs = tf.keras.Input(shape=INPUT_SHAPE)
         base_model = base_model_class(
@@ -47,10 +49,14 @@ def make_model(base_model_class, n_outputs: int, pre_trained_model=True):
             weights="imagenet",
             input_tensor=inputs
         )
+        for layer in base_model.layers:
+            layer._name = "_".join([layer.name, base_model_name, task_name])
     else:
         base_model = base_model_class()
-    output_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-1].output)
-    model = tf.keras.Model(inputs=base_model.input, outputs=output_layer)
+    output_layer_name = "_".join(["output", base_model_name, task_name])
+    model_name = "_".join([base_model_name, task_name])
+    output_layer = tf.keras.layers.Dense(n_outputs, name=output_layer_name)(base_model.layers[-1].output)
+    model = tf.keras.Model(inputs=base_model.input, outputs=output_layer, name=model_name)
     return model
 
 
@@ -68,8 +74,11 @@ class Task:
         self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
-        self.checkpoint_path = create_checkpoint_path( self.__class__.__name__, base_model)
-        self.model = make_model(BASE_MODELS[base_model], n_outputs, base_model in PRE_TRAINED_MODELS)
+        self.checkpoint_path = create_checkpoint_path(self.__class__.__name__, base_model)
+        self.model = make_model(base_model,
+                                n_outputs,
+                                self.__class__.__name__,
+                                base_model in PRE_TRAINED_MODELS)
         if load_on_init:
             self.load_model()
         logger.info(get_section_break(section_heading))
