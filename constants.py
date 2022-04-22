@@ -21,6 +21,7 @@ SUBHEADING_CHARS = "-" * 10
 CLASSIFICATION_DATASETS = ["unimib", "food_images"]
 BEST_MASS_MODEL = 'xception'
 BEST_CLASSIFICATION_MODEL = 'xception'
+ENSEMBLE_METHOD = 'concatenate'
 N_HIDDEN = 100
 
 
