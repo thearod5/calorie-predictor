@@ -11,7 +11,8 @@ from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
 from experiment.Food2Index import Food2Index
-from experiment.tasks.test_model import test_model
+from experiment.models.base_models import BASE_MODELS, BaseModel, PRE_TRAINED_MODELS
+from experiment.models.checkpoint_creator import create_checkpoint_path
 from logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
@@ -28,43 +29,6 @@ class TaskType(Enum):
     CLASSIFICATION = "CLASSIFICATION"
 
 
-class BaseModel(Enum):
-    VGG = "vgg"
-    RESNET = "resnet"
-    XCEPTION = "xception"
-    TEST = "test"
-
-
-BASE_MODELS = {
-    BaseModel.VGG: tf.keras.applications.VGG19,
-    BaseModel.RESNET: tf.keras.applications.ResNet50,
-    BaseModel.XCEPTION: tf.keras.applications.Xception,
-    BaseModel.TEST: test_model
-
-}
-
-
-def convert_to_task(base_model_class, n_outputs: int):
-    inputs = tf.keras.Input(shape=INPUT_SHAPE)
-    base_model = base_model_class(
-        pooling='avg',
-        include_top=False,
-        input_shape=INPUT_SHAPE,
-        weights="imagenet",
-        input_tensor=inputs
-    )
-    classification_layer = tf.keras.layers.Dense(n_outputs)(base_model.layers[-1].output)
-    model = tf.keras.Model(inputs=base_model.input, outputs=classification_layer)
-
-    return model
-
-
-def create_checkpoint_path(task, base_model: BaseModel):
-    task_name = task.__class__.__name__
-    base_model_name = base_model.value
-    return os.path.join(PROJECT_DIR, "results", "checkpoints", task_name, base_model_name, "cp.ckpt")
-
-
 def sample_data(data: Dataset):
     ingredient_index_map = Food2Index()
     for i, (image, label) in enumerate(data.take(9)):
@@ -74,9 +38,31 @@ def sample_data(data: Dataset):
         plt.axis("off")
 
 
+def make_model(base_model_name, n_outputs: int, task_name, pre_trained_model=True):
+    base_model_class = BASE_MODELS[base_model_name]
+    if pre_trained_model:
+        inputs = tf.keras.Input(shape=INPUT_SHAPE)
+        base_model = base_model_class(
+            pooling='avg',
+            include_top=False,
+            input_shape=INPUT_SHAPE,
+            weights="imagenet",
+            input_tensor=inputs
+        )
+        for layer in base_model.layers:
+            layer._name = "_".join([layer.name, base_model_name, task_name])
+    else:
+        base_model = base_model_class()
+    output_layer_name = "_".join(["output", base_model_name, task_name])
+    model_name = "_".join([base_model_name, task_name])
+    output_layer = tf.keras.layers.Dense(n_outputs, name=output_layer_name)(base_model.layers[-1].output)
+    model = tf.keras.Model(inputs=base_model.input, outputs=output_layer, name=model_name)
+    return model
+
+
 class Task:
     def __init__(self,
-                 base_model: BaseModel,
+                 base_model: str,
                  n_outputs=1,
                  n_epochs=N_EPOCHS,
                  load_weights=True,
@@ -88,8 +74,11 @@ class Task:
         self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
-        self.checkpoint_path = create_checkpoint_path(self, base_model)
-        self.model = convert_to_task(BASE_MODELS[base_model], n_outputs)
+        self.checkpoint_path = create_checkpoint_path(self.__class__.__name__, base_model)
+        self.model = make_model(base_model,
+                                n_outputs,
+                                self.__class__.__name__,
+                                base_model in PRE_TRAINED_MODELS)
         if load_on_init:
             self.load_model()
         logger.info(get_section_break(section_heading))
@@ -135,17 +124,17 @@ class Task:
         pass
 
     def load_model(self):
-        self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
-        weights = "Random"
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
             self.model = tf.keras.models.load_model(self.checkpoint_path)
             weights = "Previous best on validation"
-
-        logger.info(format_name_val_info("Model", self.base_model.value))
+        else:
+            self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
+            weights = "Random"
+        logger.info(format_name_val_info("Model", self.base_model))
         logger.info(format_name_val_info("Weights", weights))
 
     def train(self):
-        print("*" * 25, "Training", "*" * 25)
+        logger.info(format_header("Training"))
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
             filepath=self.checkpoint_path,
@@ -153,14 +142,14 @@ class Task:
             mode=self.task_mode,
             verbose=1,
             save_best_only=True)
-
         self.model.fit(self.get_training_data(),
                        epochs=self.n_epochs,
                        validation_data=self.get_validation_data(),
                        callbacks=[model_checkpoint_callback])
 
     def get_predictions(self, data):
-        y_pred = self.model.predict(data)
+        logger.info(format_header("Predicting"))
+        y_pred = self.model.predict(data)(data)
         y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
 

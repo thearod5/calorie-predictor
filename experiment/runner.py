@@ -42,13 +42,6 @@ name2task: Dict[str, Tasks] = {
     "ingredients-sample": Tasks.INGREDIENTS_SAMPLE
 }
 
-name2model = {
-    "vgg": BaseModel.VGG,
-    "resnet": BaseModel.RESNET,
-    "xception": BaseModel.XCEPTION,
-    "test": BaseModel.TEST
-}
-
 
 def get_sorted_food_counts(dataset: tf.data.Dataset):
     food2index = Food2Index()
@@ -74,7 +67,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='Compile a model for training or evaluation on some task.')
     parser.add_argument('data', choices=["test", "prod"])
     parser.add_argument('task', choices=name2task.keys())
-    parser.add_argument('model', choices=["vgg", "resnet", "xception"])
+    parser.add_argument('model', choices=[e.value for e in BaseModel])
     parser.add_argument('mode', choices=["train", "eval"], default="train")
     parser.add_argument('--dataset')
 
@@ -85,14 +78,12 @@ if __name__ == "__main__":
     args = get_args()
     data_env = args.data
     task_name = args.task
-    model = args.model
+    base_model = args.model
     mode = args.mode
 
     # 2. Extract task and model
     set_data(data_env)
     task_selected: Tasks = name2task[task_name]
-
-    base_model = name2model[model]
 
     # 3. Create task resources and train.
     task: Task = task_selected.value(base_model, n_epochs=N_EPOCHS)
