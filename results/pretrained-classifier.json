@@ -28,7 +28,6 @@
             3
           ],
           "name": "input_1",
-          "input_dtype": "float32",
           "sparse": false
         },
         "class_name": "InputLayer"
