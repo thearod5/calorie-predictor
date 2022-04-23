@@ -4,17 +4,12 @@ import sys
 # makes this runnable from command line
 from typing import Dict
 
-import tensorflow as tf
-
 from constants import N_EPOCHS
-from experiment.Food2Index import Food2Index
-from experiment.tasks.classification_sample_builder import ClassificationSubsetTask
 
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.append(path_to_src)
 
 import warnings
-import numpy as np
 
 from enum import Enum
 
@@ -32,35 +27,13 @@ class Tasks(Enum):
     CALORIE = CaloriePredictionTask
     MASS = MassPredictionTask
     INGREDIENTS = FoodClassificationTask
-    INGREDIENTS_SAMPLE = ClassificationSubsetTask
 
 
 name2task: Dict[str, Tasks] = {
     "calories": Tasks.CALORIE,
     "mass": Tasks.MASS,
     "ingredients": Tasks.INGREDIENTS,
-    "ingredients-sample": Tasks.INGREDIENTS_SAMPLE
 }
-
-
-def get_sorted_food_counts(dataset: tf.data.Dataset):
-    food2index = Food2Index()
-    for batch_images, batch_labels in dataset:
-        food2count = {}
-    for batch_index in range(batch_images.shape[0]):
-        label = batch_labels[batch_index]
-        label_indices = np.where(label == 1)[0]
-        foods = []
-        for label_index in label_indices:
-            food_name = food2index.get_ingredient(label_index)
-            if food_name in food2count:
-                foods.append(food_name)
-            food2count[food_name] += 1
-        else:
-            food2count[food_name] = 1
-
-    sorted_food_counts = {k: v for k, v in sorted(food2count.items(), key=lambda item: item[1])}
-    return sorted_food_counts
 
 
 def get_args():
