@@ -1,15 +1,14 @@
 import argparse
 import os
 import sys
-# makes this runnable from command line
+import warnings
 from typing import Dict
 
-from constants import N_EPOCHS
-
+# makes this runnable from command line
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.append(path_to_src)
 
-import warnings
+from constants import N_EPOCHS
 
 from enum import Enum
 
