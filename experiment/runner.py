@@ -42,7 +42,7 @@ def get_args():
     parser.add_argument('task', choices=name2task.keys())
     parser.add_argument('model', choices=[e.value for e in BaseModel])
     parser.add_argument('mode', choices=["train", "eval"], default="train")
-    parser.add_argument('--dataset')
+    parser.add_argument('--dataset', default=None)
 
     return parser.parse_args()
 

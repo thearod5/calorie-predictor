@@ -158,7 +158,7 @@ class Task:
 
     def get_predictions(self, data):
         logger.info(format_header("Predicting"))
-        y_pred = self.model.predict(data)(data)
+        y_pred = self.model.predict(data)
         y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
 
@@ -199,10 +199,9 @@ class ClassificationTask(Task, ABC):
                  load_on_init=True):
         super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
 
-    def eval(self, dataset_name):
+    def eval(self, dataset_name=None):
         logger.info(format_header("Eval"))
-        print("Dataset:", dataset_name)
-        data = self.get_eval_dataset(dataset_name)
+        data = self.get_test_data() if dataset_name is None else self.get_eval_dataset(dataset_name)
         food2index = Food2Index()
 
         y_test, y_pred = self.get_predictions(data)  # no validation data on any class. task
