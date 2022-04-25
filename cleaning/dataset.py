@@ -84,7 +84,8 @@ class Dataset:
         """
         if self._image_paths is None:
             self._image_paths = [os.path.join(self.image_dir, filename) for filename in
-                                 os.listdir(self.image_dir) if filename[0] != "."]  # ignore system files
+                                 os.listdir(self.image_dir) if
+                                 filename[0] != "." and filename != ""]  # ignore system files
         return self._image_paths
 
     def get_image_names(self):

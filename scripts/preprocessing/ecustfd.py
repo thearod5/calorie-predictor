@@ -6,7 +6,7 @@ from scripts.preprocessing.processor import ImageFolderProcessor, PATH_TO_OUTPUT
 
 
 class EcustfdProcessor(ImageFolderProcessor):
-    ECUSTFD_NAME = "ecustfd"
+    ECUSTFD_NAME = "eucstfd"
     PATH_TO_ECUSTFD = os.path.join(PATH_TO_PROJECT, ECUSTFD_NAME)
     PATH_TO_ECUSTFD_INPUT = os.path.join(PATH_TO_ECUSTFD, "JPEGImages")
     PATH_TO_ECUSTFD_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, ECUSTFD_NAME, "images")
