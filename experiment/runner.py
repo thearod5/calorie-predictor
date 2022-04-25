@@ -9,7 +9,6 @@ from typing import Dict
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.append(path_to_src)
 
-from experiment.tasks.CalorieTransferTask import CalorieTransferTask
 from experiment.tasks.calories_task import CaloriePredictionTask
 from experiment.tasks.classification_task import FoodClassificationTask
 from experiment.tasks.mass_task import MassPredictionTask
@@ -26,14 +25,12 @@ class Tasks(Enum):
     CALORIE = CaloriePredictionTask
     MASS = MassPredictionTask
     INGREDIENTS = FoodClassificationTask
-    CALORIE_TRANSFER = CalorieTransferTask
 
 
 name2task: Dict[str, Tasks] = {
     "calories": Tasks.CALORIE,
     "mass": Tasks.MASS,
     "ingredients": Tasks.INGREDIENTS,
-    "calories-transfer": Tasks.CALORIE_TRANSFER
 }
 
 
