@@ -2,19 +2,18 @@ import argparse
 import os
 import sys
 import warnings
-# makes this runnable from command line
 from enum import Enum
 from typing import Dict
+
+# makes this runnable from command line
+path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+sys.path.append(path_to_src)
 
 from experiment.tasks.CalorieTransferTask import CalorieTransferTask
 from experiment.tasks.calories_task import CaloriePredictionTask
 from experiment.tasks.classification_task import FoodClassificationTask
 from experiment.tasks.mass_task import MassPredictionTask
 from experiment.tasks.test_task import TestTask
-
-path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-sys.path.append(path_to_src)
-
 from constants import N_EPOCHS
 
 from experiment.tasks.base_task import BaseModel, Task, logger, set_data
