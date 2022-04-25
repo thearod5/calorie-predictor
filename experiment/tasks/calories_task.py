@@ -6,8 +6,8 @@ from experiment.tasks.base_task import RegressionTask
 
 class CaloriePredictionTask(RegressionTask):
 
-    def __init__(self, base_model, n_epochs=N_EPOCHS):
-        super().__init__(base_model, n_epochs=n_epochs)
+    def __init__(self, base_model, n_epochs=N_EPOCHS, model_task=None):
+        super().__init__(base_model, n_epochs=n_epochs, model_task=model_task)
         dataset = NutritionDataset(Mode.CALORIE)
         train, validation = dataset.split_to_train_test(TEST_SPLIT_SIZE)
         test_dataset = MenuMatchDataset()

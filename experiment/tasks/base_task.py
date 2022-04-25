@@ -45,7 +45,8 @@ class Task:
                  n_outputs=1,
                  n_epochs=N_EPOCHS,
                  load_weights=True,
-                 load_on_init=True):
+                 load_on_init=True,
+                 model_task=None):
         section_heading = "Run Settings"
         logger.info(format_header(section_heading))
         logger.info("Task: " + self.__class__.__name__)
@@ -53,7 +54,8 @@ class Task:
         self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
-        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, base_model)
+        model_task_name = self.__class__.__name__ if model_task is None else model_task
+        self.checkpoint_path = get_checkpoint_path(model_task_name, base_model)
         self.model = self.make_model(base_model,
                                      n_outputs,
                                      self.__class__.__name__,
@@ -169,8 +171,19 @@ class RegressionTask(Task, ABC):
     metric = "mae"
     task_mode = "min"
 
-    def __init__(self, base_model: BaseModel, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True, load_on_init=True):
-        super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
+    def __init__(self,
+                 base_model: BaseModel,
+                 n_outputs=1,
+                 n_epochs=N_EPOCHS,
+                 load_weights=True,
+                 load_on_init=True,
+                 model_task=None):
+        super().__init__(base_model,
+                         n_outputs,
+                         n_epochs,
+                         load_weights=load_weights,
+                         load_on_init=load_on_init,
+                         model_task=model_task)
 
     def eval(self, _):
         y_true, y_pred = self.get_predictions(self.get_test_data())
@@ -195,9 +208,14 @@ class ClassificationTask(Task, ABC):
     metric = "accuracy"
     task_mode = "max"
 
-    def __init__(self, base_model: BaseModel, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
-                 load_on_init=True):
-        super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
+    def __init__(self,
+                 base_model: BaseModel,
+                 n_outputs=1,
+                 n_epochs=N_EPOCHS,
+                 load_weights=True,
+                 load_on_init=True,
+                 model_task=None):
+        super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init, model_task=model_task)
 
     def eval(self, dataset_name=None):
         logger.info(format_header("Eval"))
