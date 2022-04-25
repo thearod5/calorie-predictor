@@ -2,21 +2,22 @@ import argparse
 import os
 import sys
 import warnings
+# makes this runnable from command line
+from enum import Enum
 from typing import Dict
 
-# makes this runnable from command line
+from experiment.tasks.CalorieTransferTask import CalorieTransferTask
+from experiment.tasks.calories_task import CaloriePredictionTask
+from experiment.tasks.classification_task import FoodClassificationTask
+from experiment.tasks.mass_task import MassPredictionTask
+from experiment.tasks.test_task import TestTask
+
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.append(path_to_src)
 
 from constants import N_EPOCHS
 
-from enum import Enum
-
-from experiment.tasks.calories_task import CaloriePredictionTask
-from experiment.tasks.classification_task import FoodClassificationTask
-from experiment.tasks.mass_task import MassPredictionTask
 from experiment.tasks.base_task import BaseModel, Task, logger, set_data
-from experiment.tasks.test_task import TestTask
 
 warnings.filterwarnings("ignore")
 
@@ -26,12 +27,14 @@ class Tasks(Enum):
     CALORIE = CaloriePredictionTask
     MASS = MassPredictionTask
     INGREDIENTS = FoodClassificationTask
+    CALORIE_TRANSFER = CalorieTransferTask
 
 
 name2task: Dict[str, Tasks] = {
     "calories": Tasks.CALORIE,
     "mass": Tasks.MASS,
     "ingredients": Tasks.INGREDIENTS,
+    "calories-transfer": Tasks.CALORIE_TRANSFER
 }
 
 
