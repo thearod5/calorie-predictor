@@ -1,15 +1,16 @@
 from typing import List
 
-from cleaning.dataset import Dataset
 import pandas as pd
+
+from cleaning.dataset import Dataset
 
 
 class EucstfdDataset(Dataset):
-    food_types = ['apple', 'banana', 'bread', 'bun', 'doughnut', 'egg', 'fired_dough_twist', 'grape', 'lemon', 'litchi', 'mango',
+    food_types = ['apple', 'banana', 'bread', 'bun', 'doughnut', 'egg', 'fired_dough_twist', 'grape', 'lemon', 'litchi',
+                  'mango',
                   'mix', 'mooncake', 'orange', 'pear', 'peach', 'plum', 'qiwi', 'sachima', 'tomato']
     label_col = 'weight(g)'
     id_col = 'id'
-    split_characters = ['S', 'T']
 
     def __init__(self, use_ingredients_mass=False):
         """
@@ -35,8 +36,7 @@ class EucstfdDataset(Dataset):
         :param image_name: name of the image
         :return: a list of weights for the image
         """
-        for char in self.split_characters:
-            image_name = image_name.split(char)[0]  # TODO probably a better way to do this but idk
+        image_name = image_name.split('(')[0][:-1]  # TODO probably a better way to do this but idk
         labels = self.get_food_info().loc[image_name][self.label_col]
         if self.use_ingredients_mass:
             labels = list(labels) if isinstance(labels, pd.Series) else [labels]
