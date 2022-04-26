@@ -56,6 +56,8 @@ In total, we use five different datasets containing images of food which are des
 
 Initially, we added only a dense layer to all models. However, due to poor performance in the classification task, we added several additional layers for the food classification models. These additional layers (in order) include an average pooling layer, a dense layer with relu activation, and a dropout layer. We keep the final dense layer for classification but apply the softmax activation function. For regression models, we keep just one dense layer with a single neuron for the prediction of mass or calorie amounts. 
 
+***Ensemble:*** For the ensemble model, we choose the mass model that achieved the best results and remove the final prediction layer in-order to extract the features encoded by the model. This is fed as input into our ensemble model and passed through a dense hidden layer with 100 neurons and then through a final dense layer with a single neuron for the calorie prediction.  
+
 ### Metrics
 
 The first pre-training task focuses on predicting what categories of food are present in an image. Our predictions will be represented by an encoded vector of size *n* containing 1 wherever a food category is present and 0 otherwise where *n* is the number of food classes spanning our pre-training data. We plan to use the **categorical crossentropy** loss function along with **log loss** as our training metrics based on common uses in the field. We calculate the **accuracy** to evaluate the models.
@@ -63,10 +65,31 @@ The first pre-training task focuses on predicting what categories of food are pr
 Meanwhile, the second pre-training task (predicting volume) as well as our primary training task (predicting the number of calories) are both regression problems. Therefore, we are choosing to use the **Root Mean Squared Error** as our training metric and subsequently choose the **Mean Squared Error** loss function to train the models as recommended by other practitioners. We calculate the **Mean Absolute Error (MAE)** to evaluate the models.
 
 ### Results
-In Table 3, we present the results for the three tasks (plus the calorie baseline model) across the three neural network architectures beginning with the ImageNet weights.
+In Table 3, we present the results for the three tasks across the three neural network architectures beginning with the ImageNet weights. We also show the final ensemble model using the best model from the mass classification as pre-training.
 
-The first task predicts the mass of the food, and the second task classifies which ingredients are in the pictures. Initially, all food classification accuracies were less than 10%. After adding additional layers and the softmax activation function, our accuracies improved substantially as shown in Table 3. However, because we had to retrain all our models, training was not done within the time frame necessary to use it in our pretraining step.
+The first task predicts the mass of the food, and the second task classifies which ingredients are in the pictures. Initially, all food classification accuracies were less than 10%. After adding additional layers and the softmax activation function, our accuracies improved substantially as shown in Table 3. However, because we had to retrain all our models, training was not done within the time frame necessary to use it in our pre-training step.
 Therefore, we only use the mass prediction as a pre-training step for our final calorie predictor task, but we hope to also incorporate the food classification in the future. 
 
 The final task predicts the number of calories in a series of images. We show the results with no other pre-training as our baseline performance measure as well as the final results with the mass prediction as a pre-training step. 
 
+#### TABLE 3: Results on tasks.
+| Task                            | Architecture | Result (Validation Data) | Result (Test Data)     | Metric      |
+| ------------------------------- | ------------ | ------------------------ | ---------------------- | ----------- |
+| Mass Prediction                 | VGG          | TODO                     | N/A                    | MAE         |
+| Mass Prediction                 | ResNet       | 68.7 g                   | N/A                    | MAE         |
+| Mass Prediction                 | Xception     | 71.3 g                   | N/A                    | MAE         |
+| Food Classification             | VGG          | TODO                     | N/A                    | Accuracy    |
+| Food Classification             | ResNet       | TODO                     | N/A                    | Accuracy    |
+| Food Classification             | Xception     | TODO                     | N/A                    | Accuracy    |
+| Calorie Prediction (Baseline)   | VGG          | 102.1 cal                | **354.9 cal**          | MAE         |
+| Calorie Prediction (Baseline)   | ResNet       | 91.9 cal                 | 386.4 cal              | MAE         |
+| Calorie Prediction (Baseline)   | Xception     | 87.9 cal                 | 361.1 cal              | MAE         |
+| Calorie Prediction              | * Ensemble   | TODO                     | 375.1 cal              | MAE         |
+
+\* The ensemble model uses the ResNet mass prediction model as pre-training since it performed the best on the validation data.
+
+### Analysis
+The TODO architecture obtains the lowest MAE for the mass prediction while the TODO architecture results in the highest accuracy for the food classification. In our baseline calorie prediction model, we see that VGG performs best on the test data. Unfortunately, our ensemble model does not outperform VGG, but we do see a slight improvement compared to the ResNet model. Ultimately, it is clear that calorie prediction is a challenging task. Despite the relatively low MAE achieved in the mass prediction, the ensemble calorie prediction model has a MAE of 375 calories which would be a substantial difference to those interested in tracking calories. Nonetheless, we are not discouraged as we believe that the additional steps described in the subsequent section will serve to greatly improve this result.  
+
+### Future Work
+In the future, we plan to augment our data with different rotations and croppings of our input images. Furthermore, we will use the food classification as another pre-training step to strengthen our calorie prediction model. Finally, we will experiment with adding additional layers to the ensemble model as well as changing the number of neurons on in our hidden layer.   
