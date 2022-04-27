@@ -3,9 +3,9 @@ from typing import List, Tuple
 
 import yaml
 
-from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR, ImageFolderProcessor, \
-    PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, \
+from scripts.preprocessing.processor import ImageFolderProcessor, \
     ProcessingPaths
+from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
 
 
 def write_yaml(data: dict, path_to_file: str):

@@ -1,3 +1,6 @@
+import os
+
+from constants import PROJECT_DIR
 from scripts.preprocessing.ecustfd import EcustfdProcessor
 from scripts.preprocessing.food_image import FoodImageProcessor
 from scripts.preprocessing.menu_match import MenuMatchPrecessor
@@ -19,6 +22,10 @@ def process_nutrition5k(settings: ProcessingSettings):
     jpg_images.process(settings)
     h264_images.process(settings)
 
+
+PATH_TO_PROJECT = "/Volumes/Betito HDD/Datasets/calorie-predictor"
+PATH_TO_OUTPUT_DIR = os.path.join(PROJECT_DIR, "processed")
+IMAGE_NAME_SEPARATOR = "-"
 
 if __name__ == "__main__":
     """

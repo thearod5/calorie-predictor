@@ -1,9 +1,9 @@
 import os
 from typing import List, Tuple
 
-from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR, ImageFolderProcessor, \
-    PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, \
+from scripts.preprocessing.processor import ImageFolderProcessor, \
     ProcessingPaths
+from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
 
 PATH_TO_NUTRITION5K = os.path.join(PATH_TO_PROJECT, "nutrition5k")
 PATH_TO_NUTRITION5K_IMAGES = os.path.join(PATH_TO_NUTRITION5K, "imagery")

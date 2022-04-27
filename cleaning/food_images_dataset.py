@@ -6,7 +6,7 @@ from tensorflow import Tensor
 
 from cleaning.dataset import Dataset
 from experiment.Food2Index import Food2Index
-from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
+from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR
 
 
 class FoodImagesDataset(Dataset):

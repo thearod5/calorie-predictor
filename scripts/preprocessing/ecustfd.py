@@ -1,8 +1,8 @@
 import os
 
-from scripts.preprocessing.processor import ImageFolderProcessor, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, \
-    ProcessingPaths, \
+from scripts.preprocessing.processor import ImageFolderProcessor, ProcessingPaths, \
     create_generic_single_output
+from scripts.preprocessing.runner import PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
 
 
 class EcustfdProcessor(ImageFolderProcessor):

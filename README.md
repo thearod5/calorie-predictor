@@ -1,23 +1,41 @@
 # Calorie Predictor
-## Project Code 
-### Running
-In order to run the following experiment:
+The following repository contains an experiment for improving the accuracy of a calorie prediction from the image of food.
+This computer vision task attempts to leverage pre-training tasks to improve the mean absolute error on the test
+data. These pre-training tasks include learning to classify types of foods and learning to predict the mass
+of the food. Only the latter finished in time to make the report deadline, the former will be continued in next
+years computer vision class.
 
+# Running
+In order to run the following experiment:
+1. Setup development environment
+2. Create production data
+3. Run experiment via run script
+
+**Setup Development Environment**
 1. Create a virtual environment named `venv` and install requirements via `requirements.txt`
-- `$ venv/bin/pip3 install -r requirements.txt`
-2. Download all the data
-3. Pre-process the data using the script under: `scripts/preprocessing/runner.py`
-4. Modify the `constants.py` under the `dev` environment to point to the processed data
+> $ venv/bin/pip3 install -r requirements.txt
+
+**Creating Production Data**
+1. Download each dataset present in the report below and place into a folder.
+2. Update `PATH_TO_PROJECT` to point to this containing folder.
+3. Run script `scripts/preprocessing/runner.py` to create production data.
+
+**Run Experiment**
 5. To run a given architecture on a task, use the bash script as follows:
-- `$ ./runner.sh dev [TaskName] [ModelName]` where task name is calories, mass, ingredients
-and model name is vgg, resnet, and xception. Models are saved via checkpoints, choosing the best performing epoch on the validation data.
+- `$ ./runner.sh dev [data] [task] [model] [mode]` where:
+
+data: test | prod
+task: mass | ingredients | calories
+model: vgg | resnet | xception
+mode: train | eval
 
 ### Folders
 - cleaning: Responsible for parsing raw datasets into formatted objects
 - data: Downloaded datasets.
 - experiment: Experiment pipeline for pre-training and training.
-- model: Contains the NN architecture
-- results: Contains the metrics scores of the different models analzyed. 
+- logging_util: Logger configuration
+- results: Model checkpoints while training
+- scripts: Pre-processing scripts (for now).
 
 -----------------------------------------------------------------------
 
@@ -75,7 +93,7 @@ The final task predicts the number of calories in a series of images. We show th
 #### TABLE 3: Results on tasks.
 | Task                            | Architecture | Result (Validation Data) | Result (Test Data)     | Metric      |
 | ------------------------------- | ------------ | ------------------------ | ---------------------- | ----------- |
-| Mass Prediction                 | VGG          | TODO                     | N/A                    | MAE         |
+| Mass Prediction                 | VGG          | 71.6 g                   | N/A                    | MAE         |
 | Mass Prediction                 | ResNet       | 68.7 g                   | N/A                    | MAE         |
 | Mass Prediction                 | Xception     | 71.3 g                   | N/A                    | MAE         |
 | Food Classification             | VGG          | TODO                     | N/A                    | Accuracy    |
@@ -84,12 +102,24 @@ The final task predicts the number of calories in a series of images. We show th
 | Calorie Prediction (Baseline)   | VGG          | 102.1 cal                | **354.9 cal**          | MAE         |
 | Calorie Prediction (Baseline)   | ResNet       | 91.9 cal                 | 386.4 cal              | MAE         |
 | Calorie Prediction (Baseline)   | Xception     | 87.9 cal                 | 361.1 cal              | MAE         |
-| Calorie Prediction              | * Ensemble   | TODO                     | 375.1 cal              | MAE         |
+| Calorie Prediction              | * Ensemble   | 92.5 cal                 | 375.1 cal              | MAE         |
 
 \* The ensemble model uses the ResNet mass prediction model as pre-training since it performed the best on the validation data.
 
 ### Analysis
-The TODO architecture obtains the lowest MAE for the mass prediction while the TODO architecture results in the highest accuracy for the food classification. In our baseline calorie prediction model, we see that VGG performs best on the test data. Unfortunately, our ensemble model does not outperform VGG, but we do see a slight improvement compared to the ResNet model. Ultimately, it is clear that calorie prediction is a challenging task. Despite the relatively low MAE achieved in the mass prediction, the ensemble calorie prediction model has a MAE of 375 calories which would be a substantial difference to those interested in tracking calories. Nonetheless, we are not discouraged as we believe that the additional steps described in the subsequent section will serve to greatly improve this result.  
+The ResNet architecture obtains the lowest MAE for the mass prediction while 
+we await the results for the food classification. 
+In our baseline calorie prediction model, we see that VGG performs best on the test data. 
+Unfortunately, our ensemble model does not outperform VGG, but we do see a slight 
+improvement compared to the ResNet model. Ultimately, it is clear that calorie 
+prediction is a challenging task. Despite the relatively low MAE achieved in the 
+mass prediction, the ensemble calorie prediction model has a MAE of 375 calories 
+which would be a substantial difference to those interested in tracking calories. 
+Nonetheless, we are not discouraged as we believe that the additional steps described 
+in the subsequent section will serve to greatly improve this result.  
 
 ### Future Work
-In the future, we plan to augment our data with different rotations and croppings of our input images. Furthermore, we will use the food classification as another pre-training step to strengthen our calorie prediction model. Finally, we will experiment with adding additional layers to the ensemble model as well as changing the number of neurons on in our hidden layer.   
+In the future, we plan to augment our data with different rotations and croppings of our input images. 
+Furthermore, we will use the food classification as another pre-training step to strengthen our calorie
+ prediction ensemble model. Finally, we will experiment with adding additional layers to the ensemble 
+ model as well as changing the number of neurons on in our hidden layer.   

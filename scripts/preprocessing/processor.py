@@ -78,8 +78,3 @@ class ImageFolderProcessor:
                 self.print_status()
         self.print_status(override=False)
         return self
-
-
-PATH_TO_PROJECT = "/Volumes/Betito HDD/Datasets/calorie-predictor"
-PATH_TO_OUTPUT_DIR = os.path.join(PATH_TO_PROJECT, "processed")
-IMAGE_NAME_SEPARATOR = "-"

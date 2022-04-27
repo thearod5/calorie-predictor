@@ -1,4 +1,5 @@
 import csv
+import logging.config
 import os
 from enum import Enum
 from typing import *
@@ -6,12 +7,8 @@ from typing import *
 from tensorflow import Tensor
 
 from cleaning.dataset import Dataset, get_name_from_path
-from constants import LOG_SKIPPED_ENTRIES, LOG_CONFIG_FILE
-from scripts.preprocessing.processor import IMAGE_NAME_SEPARATOR
-import sys
-
-import logging
-import logging.config
+from constants import LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES
+from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()
@@ -115,7 +112,8 @@ class NutritionDataset(Dataset):
                     dish_mode_value = getattr(dish, self._mode.value)
                     if dish_id in processed_ids or not is_mode_value_valid(dish_mode_value):
                         if LOG_SKIPPED_ENTRIES:
-                            logger.debug(dish_id + ": was already processed or has invalid value for mode " + self._mode)
+                            logger.debug(
+                                dish_id + ": was already processed or has invalid value for mode " + self._mode)
                         continue
                     self._dishes[dish_id] = self._parse_row_into_dish(row)
                     processed_ids.append(dish_id)
