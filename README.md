@@ -96,9 +96,9 @@ The final task predicts the number of calories in a series of images. We show th
 | Mass Prediction                 | VGG          | 71.6 g                   | N/A                    | MAE         |
 | Mass Prediction                 | ResNet       | 68.7 g                   | N/A                    | MAE         |
 | Mass Prediction                 | Xception     | 71.3 g                   | N/A                    | MAE         |
-| Food Classification             | VGG          | TODO                     | N/A                    | Accuracy    |
-| Food Classification             | ResNet       | TODO                     | N/A                    | Accuracy    |
-| Food Classification             | Xception     | TODO                     | N/A                    | Accuracy    |
+| Food Classification             | VGG          | In Progress              | N/A                    | Accuracy    |
+| Food Classification             | ResNet       | In Progress              | N/A                    | Accuracy    |
+| Food Classification             | Xception     | In Progress              | N/A                    | Accuracy    |
 | Calorie Prediction (Baseline)   | VGG          | 102.1 cal                | **354.9 cal**          | MAE         |
 | Calorie Prediction (Baseline)   | ResNet       | 91.9 cal                 | 386.4 cal              | MAE         |
 | Calorie Prediction (Baseline)   | Xception     | 87.9 cal                 | 361.1 cal              | MAE         |
