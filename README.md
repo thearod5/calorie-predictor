@@ -17,7 +17,7 @@ In total, we use five different datasets containing images of food which are des
 | [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | Tray images with multiple foods and containing 15 food categories.| 2K |
 | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) | Images of food and their weight| 3K |
 | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | Images of food, their calorie counts, ingredients and weight| 5K |
-| [MenuMatch](http://neelj.com/projects/menumatch/data/) | Images of food and their caloriecounts| 646 |
+| [MenuMatch](http://neelj.com/projects/menumatch/data/) | Images of food and their calorie counts| 646 |
 
 ## WINTER 2022
 
