@@ -1,4 +1,4 @@
-from cleaning.menu_match_dataset import MenuMatchDataset
+from datasets.menu_match_dataset import MenuMatchDataset
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from experiment.tasks.base_task import RegressionTask, TaskType
 

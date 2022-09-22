@@ -4,20 +4,18 @@ from typing import Dict, List
 import yaml
 from tensorflow import Tensor
 
-from cleaning.dataset import Dataset
+from datasets.abstract_dataset import AbstractDataset
 from experiment.Food2Index import Food2Index
-from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR
+from constants import IMAGE_NAME_SEPARATOR
 
 
-class FoodImagesDataset(Dataset):
+class FoodImagesDataset(AbstractDataset):
+    DIR_NAME = 'food_images'
+    DATA_FILENAME = 'labels.yml'
 
     def __init__(self):
-        """
-        constructor
-        """
-        super().__init__('food_images', 'labels.yml')
         self._image_class_mappings = {}
-        self.load_data()
+        super().__init__(self.DIR_NAME, self.DATA_FILENAME)
 
     def get_image_paths(self) -> List:
         """
@@ -57,7 +55,11 @@ class FoodImagesDataset(Dataset):
         """
         return self._image_class_mappings
 
-    def load_data(self):
+    def load_data(self) -> None:
+        """
+        Loads the data for the dataset
+        :return: None
+        """
         food2index = Food2Index()
         self._image_class_mappings = yaml.safe_load(open(self.label_file))
         for food_category in self._image_class_mappings.values():

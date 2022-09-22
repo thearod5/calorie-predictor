@@ -1,16 +1,16 @@
 import os
 from typing import List, Tuple
 
-from scripts.preprocessing.processor import ImageFolderProcessor, \
-    ProcessingPaths
-from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
+from datasets.preprocessing.abstract_processor import AbstractProcessor, ProcessingPaths
+from constants import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
+from datasets.nutrition_dataset import NutritionDataset
 
-PATH_TO_NUTRITION5K = os.path.join(PATH_TO_PROJECT, "nutrition5k")
+PATH_TO_NUTRITION5K = os.path.join(PATH_TO_PROJECT, NutritionDataset.DIR_NAME)
 PATH_TO_NUTRITION5K_IMAGES = os.path.join(PATH_TO_NUTRITION5K, "imagery")
-PATH_TO_NUTRITION5K_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, "nutrition5k", "images")
+PATH_TO_NUTRITION5K_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, NutritionDataset.DIR_NAME, IMAGE_DIR)
 
 
-class Nutrition5kJpgImages(ImageFolderProcessor):
+class NutritionJpgImagesProcessor(AbstractProcessor):
     INPUT_IMAGE_NAME = "rgb.png"
     IMAGE_SUFFIX = "overhead"
 
@@ -25,7 +25,7 @@ class Nutrition5kJpgImages(ImageFolderProcessor):
         return [(input_path, output_image_path)]
 
 
-class Nutrition5kH264Images(ImageFolderProcessor):
+class NutritionH264ImagesProcessor(AbstractProcessor):
     INPUT_IMAGE_NAME = "rgb.png"
     IMAGE_SUFFIX = "overhead"
     H264_NAME_TEMPLATE = "camera_%s.h264"
@@ -44,3 +44,16 @@ class Nutrition5kH264Images(ImageFolderProcessor):
             input_image_path = os.path.join(entry_name, input_image_name)
             output_paths.append((input_image_path, output_image_path))
         return output_paths
+
+
+class NutritionProcessor(AbstractProcessor):
+
+    def __init__(self):
+        super().__init__(PATH_TO_NUTRITION5K_IMAGES)
+
+    def process(self, settings: ProcessingSettings) -> None:
+        Nutrition5kJpgImagesProcessor().process(settings)
+        Nutrition5kH264ImagesProcessor().process(settings)
+
+    def create_output_paths(self, entry_name: str) -> ProcessingPaths:
+        pass

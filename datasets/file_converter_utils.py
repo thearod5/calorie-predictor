@@ -11,45 +11,16 @@ MENU MATCH
 """
 
 MENU_MATCH = os.path.join(get_data_dir(), 'menu_match')
-ORIG_LABEL_FILE = os.path.join(MENU_MATCH, 'labels.txt')
+
 NEW_LABEL_FILE = os.path.join(MENU_MATCH, 'labels.yml')
-ORIG_DATA_FILE = os.path.join(MENU_MATCH, 'items_info.txt')
+
 NEW_DATA_FILE = os.path.join(MENU_MATCH, 'items_info.csv')
 TOTAL_CALORIES_FILE = os.path.join(MENU_MATCH, 'total_calories.yml')
 
 
-def convert_to_csv():
-    with open(NEW_DATA_FILE, "w") as new_file:
-        with open(ORIG_DATA_FILE) as orig_file:
-            for line in orig_file.readlines():
-                new_line = "".join(line.split())
-                new_line = new_line.replace('\t', '').replace(';', ',')
-                new_file.write(new_line + '\n')
 
 
-def make_image_ingredient_yml():
-    missing_img = 'img10.jpg'
-    image_ingredient_mappings = {}
-    with open(ORIG_LABEL_FILE) as f:
-        for line in f.readlines():
-            img_data = "".join(line.split()).split(";")
-            image_ingredient_mappings[img_data[0]] = img_data[1:-1]
-    image_ingredient_mappings.pop(missing_img)  # this image is missing??
-    with open(NEW_LABEL_FILE, 'w') as file:
-        yaml.dump(image_ingredient_mappings, file)
 
-
-def make_image_calorie_mapping_yml():
-    food_info = pd.read_csv(NEW_DATA_FILE, index_col=1)
-    image_labels_mapping = yaml.safe_load(open(NEW_LABEL_FILE))
-    image_calorie_mappings = {}
-    for img, labels in image_labels_mapping.items():
-        total_calories = 0
-        for label in labels:
-            total_calories += food_info.loc[label]['Calories']
-        image_calorie_mappings[img.split(".")[0]] = int(total_calories)
-    with open(TOTAL_CALORIES_FILE, 'w') as file:
-        yaml.dump(image_calorie_mappings, file)
 
 
 """

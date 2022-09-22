@@ -1,8 +1,13 @@
 import os
 from os.path import *
 
-PROJECT_DIR = dirname(abspath(__file__))
 ENV = "test"  # dev | prod
+
+PROJECT_DIR = dirname(abspath(__file__))
+PATH_TO_PROJECT = "/Volumes/Betito HDD/Datasets/calorie-predictor"
+PATH_TO_OUTPUT_DIR = os.path.join(PROJECT_DIR, "processed")
+IMAGE_NAME_SEPARATOR = "-"
+IMAGE_DIR = "images"
 
 RANDOM_SEED = 0
 N_CHANNELS = 3

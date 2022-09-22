@@ -3,22 +3,16 @@ from typing import List, Tuple
 
 import yaml
 
-from scripts.preprocessing.processor import ImageFolderProcessor, \
-    ProcessingPaths
-from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
+from datasets.preprocessing.abstract_processor  import AbstractProcessor, ProcessingPaths
+from constants import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
+from datasets.food_images_dataset import FoodImagesDataset
 
 
-def write_yaml(data: dict, path_to_file: str):
-    with open(path_to_file, 'w') as f:
-        yaml.dump(data, f)
-
-
-class FoodImageProcessor(ImageFolderProcessor):
-    FOOD_IMAGES_NAME = "food_images"
-    PATH_TO_FOOD_IMAGES = os.path.join(PATH_TO_PROJECT, FOOD_IMAGES_NAME)
-    PATH_TO_FOOD_IMAGES_INPUT = os.path.join(PATH_TO_FOOD_IMAGES, "images")
-    PATH_TO_FOOD_IMAGES_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, FOOD_IMAGES_NAME, "images")
-    PATH_TO_LABELS = os.path.join(PATH_TO_OUTPUT_DIR, FOOD_IMAGES_NAME, "labels.yml")
+class FoodImageProcessor(AbstractProcessor):
+    PATH_TO_FOOD_IMAGES = os.path.join(PATH_TO_PROJECT, FoodImagesDataset.DIR_NAME)
+    PATH_TO_FOOD_IMAGES_INPUT = os.path.join(FoodImagesDataset.DIR_NAME, IMAGE_DIR)
+    PATH_TO_FOOD_IMAGES_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, FoodImagesDataset.DIR_NAME, IMAGE_DIR)
+    PATH_TO_LABELS = os.path.join(PATH_TO_OUTPUT_DIR, FOOD_IMAGES_NAME, FoodImagesDataset.DATA_FILENAME)
 
     def __init__(self):
         super().__init__(self.PATH_TO_FOOD_IMAGES_INPUT)
@@ -38,7 +32,7 @@ class FoodImageProcessor(ImageFolderProcessor):
             output_paths.append((input_path, output_image_path))
         return output_paths
 
-    def create_output_file(self):
+    def post_process(self):
         image_files = list(filter(lambda f: f[0] != ".", os.listdir(self.PATH_TO_FOOD_IMAGES_OUTPUT)))
 
         data = {}
@@ -49,4 +43,9 @@ class FoodImageProcessor(ImageFolderProcessor):
                 print("Collision at: ", image_id)
             data[image_id] = image_class
 
-        write_yaml(data, self.PATH_TO_LABELS)
+        self.write_yaml(data, self.PATH_TO_LABELS)
+
+    @staticmethod
+    def write_yaml(data: dict, path_to_file: str):
+        with open(path_to_file, 'w') as f:
+            yaml.dump(data, f)

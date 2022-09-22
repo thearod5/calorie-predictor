@@ -1,5 +1,5 @@
-from cleaning.menu_match_dataset import MenuMatchDataset
-from cleaning.nutrition_dataset import Mode, NutritionDataset
+from datasets.menu_match_dataset import MenuMatchDataset
+from datasets.nutrition_dataset import Mode, NutritionDataset
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from experiment.tasks.base_task import RegressionTask
 

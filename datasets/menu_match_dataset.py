@@ -2,17 +2,17 @@ from typing import Dict
 
 import yaml
 
-from cleaning.dataset import Dataset
+from datasets.abstract_dataset import AbstractDataset
 
 
-class MenuMatchDataset(Dataset):
+class MenuMatchDataset(AbstractDataset):
+
+    DIR_NAME = 'menu_match'
+    DATA_FILE = 'total_calories.yml'
 
     def __init__(self):
-        """
-        constructor
-        """
-        super().__init__('menu_match', 'total_calories.yml')
         self._image_calorie_mappings = None
+        super().__init__(self.DIR_NAME, self.DATA_FILE)
 
     def get_image_calorie_mappings(self) -> Dict[str, float]:
         """

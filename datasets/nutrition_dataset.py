@@ -6,9 +6,8 @@ from typing import *
 
 from tensorflow import Tensor
 
-from cleaning.dataset import Dataset, get_name_from_path
-from constants import LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES
-from scripts.preprocessing.runner import IMAGE_NAME_SEPARATOR
+from datasets.abstract_dataset import AbstractDataset
+from constants import LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES, IMAGE_NAME_SEPARATOR
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()
@@ -38,40 +37,28 @@ DatasetMap = {
 }
 
 
-def is_mode_value_valid(mode_value: Union[float, list]):
-    if isinstance(mode_value, float) and mode_value < 1:
-        return False
-    if isinstance(mode_value, list) and len(mode_value) == 0:
-        return False
-    return True
-
-
-class NutritionDataset(Dataset):
+class NutritionDataset(AbstractDataset):
     id_index = 0
     calorie_index = 1
     mass_index = 2
     num_features = 6
 
-    def __init__(self, mode: Mode):
-        """
-        constructor
-        :param dataset_num: number of the dataset (either 1 or 2)
-        :param mode: mode to determine which labels will be used
-        """
-        dataset_dirname = 'nutrition5k'
-        super().__init__(dataset_dirname, "")
-        self._dishes = {}
-        self._mode = mode
-        self._label_files = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
-        self._load_data()
+    DIR_NAME = 'nutrition5k'
+    DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
 
-    def get_image_paths(self):
+    def __init__(self, mode: Mode):
+        self._dishes: Dict[str, Dish] = {}
+        self._mode = mode
+        self._label_files = self.DATA_FILENAMES
+        super().__init__(self.DIR_NAME, "")
+
+    def get_image_paths(self) -> List[str]:
         """
         Overrides parent paths to filter out images whose corresponding dishes do not
         have sufficient or valid data.
         :return:
         """
-        return list(filter(lambda p: self._get_image_dish(get_name_from_path(p)) is not None,
+        return list(filter(lambda p: self._get_image_dish(self.get_name_from_path(p)) is not None,
                            super().get_image_paths()))
 
     def get_label(self, image_name: str) -> Union[float, Tensor]:
@@ -88,16 +75,21 @@ class NutritionDataset(Dataset):
             return self.food2index.to_ingredients_tensor(label)
         return label
 
-    def _get_image_dish(self, image_name: str) -> Union[Dish, None]:
+    def _get_image_dish(self, image_name: str) -> Optional[Dish]:
+        """
+        Gets the Dish in an image
+        :param image_name: name of the image
+        :return: the Dish in image
+        """
         if IMAGE_NAME_SEPARATOR in image_name:
             image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
         if image_name not in self._dishes:
             return None
         return self._dishes[image_name]
 
-    def _load_data(self) -> None:
+    def load_data(self) -> None:
         """
-        loads the data from the label file
+        Loads the data for the dataset
         :return: None
         """
         self._dishes = {}
@@ -110,7 +102,7 @@ class NutritionDataset(Dataset):
                     dish_id = row[self.id_index]
                     dish = self._parse_row_into_dish(row)
                     dish_mode_value = getattr(dish, self._mode.value)
-                    if dish_id in processed_ids or not is_mode_value_valid(dish_mode_value):
+                    if dish_id in processed_ids or not self.is_mode_value_valid(dish_mode_value):
                         if LOG_SKIPPED_ENTRIES:
                             logger.debug(
                                 dish_id + ": was already processed or has invalid value for mode " + self._mode)
@@ -119,8 +111,12 @@ class NutritionDataset(Dataset):
                     processed_ids.append(dish_id)
         self.food2index.save()
 
-    def _parse_row_into_dish(self, row) -> Dish:
-
+    def _parse_row_into_dish(self, row: List) -> Dish:
+        """
+        Takes a row from the datafile and converts it into a Dish obj
+        :param row: row from datafile
+        :return: the Dish from row
+        """
         # 1. Get calories and mass
         dish_id = row[self.id_index]
         dish_calories = float(row[self.calorie_index])
@@ -137,3 +133,11 @@ class NutritionDataset(Dataset):
 
         # 3. Create dish and save
         return Dish(dish_id, dish_calories, dish_mass, dish_ingredients)
+
+    @staticmethod
+    def is_mode_value_valid(mode_value: Union[float, list]):
+        if isinstance(mode_value, float) and mode_value < 1:
+            return False
+        if isinstance(mode_value, list) and len(mode_value) == 0:
+            return False
+        return True
