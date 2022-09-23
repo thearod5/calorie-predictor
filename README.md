@@ -18,7 +18,13 @@ In total, we use five different datasets containing images of food which are des
 | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) | Images of food and their weight| 3K |
 | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | Images of food, their calorie counts, ingredients and weight| 5K |
 | [MenuMatch](http://neelj.com/projects/menumatch/data/) | Images of food and their calorie counts| 646 |
+| [MenuMatch with human annotations]() | For each image in this dataset, we are hiring Amazon Mechanical Turk workers to create a bounding box over the region of the food they think is most caloric. See below for example. | 1938 |
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/26884108/192034289-e5ad072d-477e-4b88-9cd6-676b0c97dc14.jpg" alt="Example image for MenuMatch with human annotation."/>
+</p>
+
+#####
 ## WINTER 2022
 
 ### Report
