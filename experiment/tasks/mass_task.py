@@ -21,5 +21,8 @@ class MassPredictionTask(RegressionTask):
     def get_validation_data(self):
         return self._validation
 
+    def get_eval_dataset(self, name: str) -> [str]:
+        pass
+
     def get_test_data(self):
         return self._test

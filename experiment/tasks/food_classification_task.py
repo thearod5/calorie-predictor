@@ -22,7 +22,7 @@ class FoodClassificationTask(ClassificationTask):
     def __init__(self, base_model, n_epochs=N_EPOCHS, training_datasets: [str] = CLASSIFICATION_DATASETS):
         super().__init__(base_model, n_outputs=len(Food2Index()), n_epochs=n_epochs)
         datasets = self.get_datasets(training_datasets)
-        dataset, image_count = combine_datasets(datasets)
+        dataset, image_count = self.combine_datasets(datasets)
         d_splits = list(map(Dataset.prepare_dataset, Dataset.split_dataset(dataset, image_count, TEST_SPLIT_SIZE)))
         train, validation = d_splits[0], d_splits[1]
         self._train = train
@@ -42,7 +42,7 @@ class FoodClassificationTask(ClassificationTask):
         for dataset in [self._train, self._test, self._validation]:
             if dataset is None:
                 continue
-            count += len(get_food_counts(dataset))
+            count += len(self.get_food_counts(dataset))
         return count
 
     def get_training_data(self):
@@ -54,35 +54,30 @@ class FoodClassificationTask(ClassificationTask):
     def get_test_data(self):
         return self._test
 
+    @staticmethod
+    def get_food_counts(dataset: tf.data.AbstractDataset):
+        food2index = Food2Index()
+        food2count = {}
+        for batch_images, batch_labels in dataset:
+            for batch_index in range(batch_images.shape[0]):
+                label = batch_labels[batch_index]
+                label_indices = np.where(label == 1)[0]
+                foods = []
+                for label_index in label_indices:
+                    food_name = food2index.get_ingredient(label_index)
+                    foods.append(food_name)
+                    if food_name in food2count:
+                        food2count[food_name] += 1
+                    else:
+                        food2count[food_name] = 1
 
-def combine_datasets(datasets):
-    dataset = datasets[0].get_dataset(shuffle=False)
-    image_count = len(datasets[0].get_image_paths())
-    for d in datasets[1:]:
-        dataset = dataset.concatenate(d.get_dataset(shuffle=False))
-        image_count += len(d.get_image_paths())
-    return dataset, image_count
+        return food2count
 
 
-def print_datasets(datasets, image_count):
-    print("Datasets:", ", ".join([d.__class__.__name__ for d in datasets]))
-    print("Image Count:", image_count)
 
 
-def get_food_counts(dataset: tf.data.AbstractDataset):
-    food2index = Food2Index()
-    food2count = {}
-    for batch_images, batch_labels in dataset:
-        for batch_index in range(batch_images.shape[0]):
-            label = batch_labels[batch_index]
-            label_indices = np.where(label == 1)[0]
-            foods = []
-            for label_index in label_indices:
-                food_name = food2index.get_ingredient(label_index)
-                foods.append(food_name)
-                if food_name in food2count:
-                    food2count[food_name] += 1
-                else:
-                    food2count[food_name] = 1
 
-    return food2count
+
+
+
+

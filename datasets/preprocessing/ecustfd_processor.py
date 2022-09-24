@@ -1,11 +1,11 @@
 import os
 
-from datasets.preprocessing.abstract_processor import AbstractProcessor, ProcessingPaths
+from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 from constants import PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
 from datasets.eucstfd_dataset import EucstfdDataset
 
 
-class EcustfdProcessor(AbstractProcessor):
+class EcustfdProcessor(BaseProcessor):
     PATH_TO_ECUSTFD = os.path.join(PATH_TO_PROJECT, EucstfdDataset.DIR_NAME)
     PATH_TO_ECUSTFD_INPUT = os.path.join(PATH_TO_ECUSTFD, "JPEGImages")
     PATH_TO_ECUSTFD_OUPUT = os.path.join(PATH_TO_OUTPUT_DIR, EucstfdDataset.DIR_NAME, IMAGE_DIR)

@@ -3,12 +3,12 @@ from typing import List, Tuple
 
 import yaml
 
-from datasets.preprocessing.abstract_processor  import AbstractProcessor, ProcessingPaths
+from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 from constants import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
 from datasets.food_images_dataset import FoodImagesDataset
 
 
-class FoodImageProcessor(AbstractProcessor):
+class FoodImageProcessor(BaseProcessor):
     PATH_TO_FOOD_IMAGES = os.path.join(PATH_TO_PROJECT, FoodImagesDataset.DIR_NAME)
     PATH_TO_FOOD_IMAGES_INPUT = os.path.join(FoodImagesDataset.DIR_NAME, IMAGE_DIR)
     PATH_TO_FOOD_IMAGES_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, FoodImagesDataset.DIR_NAME, IMAGE_DIR)
@@ -42,8 +42,8 @@ class FoodImageProcessor(AbstractProcessor):
             if image_id in data:
                 print("Collision at: ", image_id)
             data[image_id] = image_class
-
-        self.write_yaml(data, self.PATH_TO_LABELS)
+        if not os.path.exists(self.PATH_TO_LABELS):
+            self.write_yaml(data, self.PATH_TO_LABELS)
 
     @staticmethod
     def write_yaml(data: dict, path_to_file: str):

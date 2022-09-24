@@ -17,7 +17,7 @@ class ProcessingSettings:
         self.throw_errors = throw_errors
 
 
-class AbstractProcessor:
+class BaseProcessor:
     BAR = "-" * 50
 
     def __init__(self, image_dir: str):
