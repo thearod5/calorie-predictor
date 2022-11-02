@@ -18,3 +18,5 @@ if __name__ == "__main__":
     data = pd.DataFrame()
     data["image_url"] = image_names
     data.to_csv("images.csv", index=False)
+
+    data.sample(n=20).to_csv("images_trial.csv", index=False)
