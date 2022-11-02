@@ -162,6 +162,33 @@ class Task:
         y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
 
+    @staticmethod
+    def initialize_dict_entry(dict_, key, init_val=0):
+        if key not in dict_:
+            dict_[key] = init_val
+        return dict_, key
+
+    @staticmethod
+    def increment_dict_entry(dict_, key, child_key=None):
+        dict_, key = Task.initialize_dict_entry(dict_, key, init_val={} if child_key else 0)
+        if child_key:
+            dict_, key = Task.initialize_dict_entry(dict_[key], child_key)
+        dict_[key] += 1
+
+    @staticmethod
+    def combine_datasets(datasets):
+        dataset = datasets[0].get_dataset(shuffle=False)
+        image_count = len(datasets[0].get_image_paths())
+        for d in datasets[1:]:
+            dataset = dataset.concatenate(d.get_dataset(shuffle=False))
+            image_count += len(d.get_image_paths())
+        return dataset, image_count
+
+    @staticmethod
+    def print_datasets(datasets, image_count):
+        print("Datasets:", ", ".join([d.__class__.__name__ for d in datasets]))
+        print("Image Count:", image_count)
+
 
 class RegressionTask(Task, ABC):
     task_type = TaskType.REGRESSION
@@ -187,11 +214,6 @@ class RegressionTask(Task, ABC):
         logger.info(format_name_val_info("Test Mean Absolute Error", mae))
 
     def get_predictions(self, data):
-        """
-        Performs data conversion from 1D tensors to single numbers.
-        :param data: The data to get predictions from.
-        :return: The true y values and the predicted values respectively.
-        """
         y_true, y_pred = super().get_predictions(data)
         y_true = list(map(lambda v: v.numpy(), y_true))  # unpacks 1D vector into single number
         y_true = np.array(y_true)
@@ -237,38 +259,28 @@ class ClassificationTask(Task, ABC):
             labels.append(label_name)
 
             if pred == label:
-                increment_dict_entry(class_tp, label_name)
+                self.increment_dict_entry(class_tp, label_name)
             else:
-                increment_dict_entry(class_fp, pred_name, label_name)
-                increment_dict_entry(class_fn, label_name, pred_name)
+                self.increment_dict_entry(class_fp, pred_name, label_name)
+                self.increment_dict_entry(class_fn, label_name, pred_name)
 
-        print_metrics(labels, predictions)
+        self.print_metrics(labels, predictions)
         logger.info(format_eval_results(class_tp, "TP"))
         logger.info(format_eval_results(class_fp, "FP"))
         logger.info(format_eval_results(class_fn, "FN"))
 
-
-def print_metrics(labels, predictions):
-    matrix = confusion_matrix(labels, predictions)
-    FP = matrix.sum(axis=0) - np.diag(matrix)
-    FN = matrix.sum(axis=1) - np.diag(matrix)
-    TP = np.diag(matrix)
-    TN = matrix.sum() - (FP + FN + TP)
-    logger.info("Predictions: %s" % len(predictions))
-    logger.info("False Positive: %s" % FP.sum())
-    logger.info("False Negatives: %s" % FN.sum())
-    logger.info("True Positive: %s" % TP.sum())
-    logger.info("True Negative: %s" % TN.sum())
-
-
-def initialize_dict_entry(dict_, key, init_val=0):
-    if key not in dict_:
-        dict_[key] = init_val
-    return dict_, key
+    @staticmethod
+    def print_metrics(labels, predictions):
+        matrix = confusion_matrix(labels, predictions)
+        FP = matrix.sum(axis=0) - np.diag(matrix)
+        FN = matrix.sum(axis=1) - np.diag(matrix)
+        TP = np.diag(matrix)
+        TN = matrix.sum() - (FP + FN + TP)
+        logger.info("Predictions: %s" % len(predictions))
+        logger.info("False Positive: %s" % FP.sum())
+        logger.info("False Negatives: %s" % FN.sum())
+        logger.info("True Positive: %s" % TP.sum())
+        logger.info("True Negative: %s" % TN.sum())
 
 
-def increment_dict_entry(dict_, key, child_key=None):
-    dict_, key = initialize_dict_entry(dict_, key, init_val={} if child_key else 0)
-    if child_key:
-        dict_, key = initialize_dict_entry(dict_[key], child_key)
-    dict_[key] += 1
+

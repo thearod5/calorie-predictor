@@ -11,7 +11,7 @@ class EucstfdDataset(AbstractDataset):
                   'mix', 'mooncake', 'orange', 'pear', 'peach', 'plum', 'qiwi', 'sachima', 'tomato']
     LABEL_COL = 'weight(g)'
     ID_COL = 'id'
-    DIR_NAME = 'eucstfd'
+    DIR_NAME = 'ecustfd'
     DATA_FILENAME = 'density.xls'
 
     def __init__(self, use_ingredients_mass=False):

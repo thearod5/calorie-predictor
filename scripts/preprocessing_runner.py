@@ -1,10 +1,8 @@
-import os
-
+from datasets.preprocessing.base_processor import ProcessingSettings
 from datasets.preprocessing.ecustfd_processor import EcustfdProcessor
 from datasets.preprocessing.food_image_processor import FoodImageProcessor
 from datasets.preprocessing.menu_match_processor import MenuMatchPrecessor
 from datasets.preprocessing.nutrition_processor import NutritionProcessor
-from datasets.preprocessing.abstract_processor import ProcessingSettings
 from datasets.preprocessing.unimib_processor import UnimibProcessor
 
 """

@@ -44,7 +44,7 @@ class NutritionDataset(AbstractDataset):
     num_features = 6
 
     DIR_NAME = 'nutrition5k'
-    DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
+    DATA_FILENAMES = ["final_dish_metadata_cafe1.csv", "final_dish_metadata_cafe2.csv"]
 
     def __init__(self, mode: Mode):
         self._dishes: Dict[str, Dish] = {}
@@ -135,7 +135,12 @@ class NutritionDataset(AbstractDataset):
         return Dish(dish_id, dish_calories, dish_mass, dish_ingredients)
 
     @staticmethod
-    def is_mode_value_valid(mode_value: Union[float, list]):
+    def is_mode_value_valid(mode_value: Union[float, list]) -> bool:
+        """
+        Checks that a given mode is an option
+        :param mode_value: the selected mode value
+        :return: True if mode is valid, else False
+        """
         if isinstance(mode_value, float) and mode_value < 1:
             return False
         if isinstance(mode_value, list) and len(mode_value) == 0:

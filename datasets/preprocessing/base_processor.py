@@ -1,10 +1,10 @@
 import os
 from abc import abstractmethod
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 
 from tensorflow.python.keras.preprocessing.image import save_img
 
-from datasets.dataset import Dataset
+from datasets.abstract_dataset import AbstractDataset
 
 ImageLabel = Dict[str, str]
 ProcessingPath = Tuple[str, str]  # Represents the input path to an image and the output path after resizing
@@ -17,11 +17,11 @@ class ProcessingSettings:
         self.throw_errors = throw_errors
 
 
-class AbstractProcessor:
+class BaseProcessor:
     BAR = "-" * 50
 
     def __init__(self, image_dir: str):
-        self.dataset = Dataset("", "")
+        self.dataset = AbstractDataset("", "")
         self.dataset.image_dir = image_dir
         self.n_processed = 0
         self.n_failed = 0
@@ -48,6 +48,12 @@ class AbstractProcessor:
         print("Processing : " + self.__class__.__name__)
         self.pre_process()
         image_paths = self.dataset.get_image_paths()
+        self.resize_images(image_paths, settings)
+        self.print_status(override=False)
+        self.post_process()
+        return True
+
+    def resize_images(self, image_paths, settings):
         for entry_name in image_paths:
             entry_outputs = self.create_output_paths(entry_name)
             for entry_output in entry_outputs:
@@ -58,9 +64,6 @@ class AbstractProcessor:
                 self.n_processed += 1
             if self.n_processed % 5000 == 0:
                 self.print_status()
-        self.print_status(override=False)
-        self.post_process()
-        return True
 
     @staticmethod
     def read_resize_save_image(input_image_path: str, output_image_path: str, settings: ProcessingSettings):
@@ -70,7 +73,7 @@ class AbstractProcessor:
                 return
             if not os.path.isfile(input_image_path):
                 raise Exception("No image found at path: ", input_image_path)
-            image = Dataset.decode_image_from_path(input_image_path)
+            image = AbstractDataset.decode_image_from_path(input_image_path)
             save_img(output_image_path, image)
         except Exception as e:
             if settings.show_errors:

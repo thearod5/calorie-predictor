@@ -1,11 +1,11 @@
 import os
 
-from datasets.preprocessing.abstract_processor import AbstractProcessor, ProcessingPaths
+from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 from constants import PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
 from datasets.unimib_dataset import UnimibDataset
 
 
-class UnimibProcessor(AbstractProcessor):
+class UnimibProcessor(BaseProcessor):
     PATH_TO_UNIMIB2016 = os.path.join(PATH_TO_PROJECT, UnimibDataset.DIR_NAME.upper())
     PATH_TO_UNIMIB2016_INPUT = os.path.join(PATH_TO_UNIMIB2016, "UNIMIB2016-images")
     PATH_TO_UNIMIB2016_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, UnimibDataset.DIR_NAME, IMAGE_DIR)

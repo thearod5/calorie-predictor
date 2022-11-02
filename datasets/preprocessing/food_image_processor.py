@@ -3,19 +3,20 @@ from typing import List, Tuple
 
 import yaml
 
-from datasets.preprocessing.abstract_processor  import AbstractProcessor, ProcessingPaths
-from constants import IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
+from constants import IMAGE_DIR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
 from datasets.food_images_dataset import FoodImagesDataset
+from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 
 
-class FoodImageProcessor(AbstractProcessor):
-    PATH_TO_FOOD_IMAGES = os.path.join(PATH_TO_PROJECT, FoodImagesDataset.DIR_NAME)
-    PATH_TO_FOOD_IMAGES_INPUT = os.path.join(FoodImagesDataset.DIR_NAME, IMAGE_DIR)
-    PATH_TO_FOOD_IMAGES_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, FoodImagesDataset.DIR_NAME, IMAGE_DIR)
-    PATH_TO_LABELS = os.path.join(PATH_TO_OUTPUT_DIR, FOOD_IMAGES_NAME, FoodImagesDataset.DATA_FILENAME)
+class FoodImageProcessor(BaseProcessor):
+    PATH_TO_SOURCE = os.path.join(PATH_TO_PROJECT, FoodImagesDataset.DIR_NAME)
+    PATH_TO_SOURCE_IMAGES = os.path.join(PATH_TO_SOURCE, IMAGE_DIR)
+    PATH_TO_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, FoodImagesDataset.DIR_NAME)
+    PATH_TO_OUTPUT_IMAGES = os.path.join(PATH_TO_OUTPUT, IMAGE_DIR)
+    PATH_TO_LABELS = os.path.join(PATH_TO_OUTPUT_DIR, FoodImagesDataset.DIR_NAME, FoodImagesDataset.DATA_FILENAME)
 
     def __init__(self):
-        super().__init__(self.PATH_TO_FOOD_IMAGES_INPUT)
+        super().__init__(self.PATH_TO_SOURCE_IMAGES)
 
     def create_output_paths(self, path_to_food_category: str) -> ProcessingPaths:
         output_paths: List[Tuple[str, str]] = []
@@ -25,24 +26,28 @@ class FoodImageProcessor(AbstractProcessor):
             if image_name[0] == ".":
                 continue
             input_path = os.path.join(path_to_food_category, image_name)
-            output_directory_path = os.path.join(self.PATH_TO_FOOD_IMAGES_OUTPUT, food_category)
+            output_directory_path = os.path.join(self.PATH_TO_OUTPUT, food_category)
             if not os.path.isdir(output_directory_path):
                 os.mkdir(output_directory_path)
             output_image_path = os.path.join(output_directory_path, image_name)
             output_paths.append((input_path, output_image_path))
         return output_paths
 
+    def _list_dir(self, path_to_dir: str):
+        return list(filter(lambda f: f[0] != ".", os.listdir(path_to_dir)))
+
     def post_process(self):
-        image_files = list(filter(lambda f: f[0] != ".", os.listdir(self.PATH_TO_FOOD_IMAGES_OUTPUT)))
-
+        if os.path.exists(self.PATH_TO_LABELS):
+            return
         data = {}
-        for image_file in image_files:
-            image_id, image_class = image_file.split(IMAGE_NAME_SEPARATOR)
-            image_class = image_class.split(".")[0]  # remove image extension
-            if image_id in data:
-                print("Collision at: ", image_id)
-            data[image_id] = image_class
-
+        for image_class in self._list_dir(self.PATH_TO_OUTPUT_IMAGES):
+            image_class_path = os.path.join(self.PATH_TO_OUTPUT_IMAGES, image_class)
+            for image_name in self._list_dir(image_class_path):
+                if image_name in data:
+                    print("Collision at: ", image_name)
+                image_id = os.path.split(image_name)[0]
+                data[image_id] = image_class
+        print(self.PATH_TO_LABELS)
         self.write_yaml(data, self.PATH_TO_LABELS)
 
     @staticmethod
