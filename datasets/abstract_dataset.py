@@ -79,7 +79,7 @@ class AbstractDataset:
         """
         return list(map(self.get_name_from_path, self.get_image_paths()))
 
-    def get_labels(self) -> tf.data.AbstractDataset:
+    def get_labels(self) -> tf.data.Dataset:
         """
         makes a dataset of all image labels
         :return: a tensor flow dataset of all labels
@@ -90,19 +90,19 @@ class AbstractDataset:
             labels.append(self.get_label(name))
         if not isinstance(labels[0], tf.Tensor):
             labels = tf.ragged.constant(labels)
-        return tf.data.AbstractDataset.from_tensor_slices(labels)
+        return tf.data.Dataset.from_tensor_slices(labels)
 
-    def get_images(self) -> tf.data.AbstractDataset:
+    def get_images(self) -> tf.data.Dataset:
         """
         makes a dataset of all processed images
         :return: a dataset of all images
         """
         if self._images is None:
-            path_ds = tf.data.AbstractDataset.from_tensor_slices(self.get_image_paths())
+            path_ds = tf.data.Dataset.from_tensor_slices(self.get_image_paths())
             self._images = path_ds.map(self.decode_image_from_path, num_parallel_calls=AUTOTUNE)
         return self._images
 
-    def split_to_train_test(self, test_split_size: float = 0, shuffle=True) -> List[tf.data.AbstractDataset]:
+    def split_to_train_test(self, test_split_size: float = 0, shuffle=True) -> List[tf.data.Dataset]:
         """
         gets a zipped dataset of image, label pairs which are split into two (if spit_size = 0, only one dataset is created)
         :param shuffle: shuffles data if True
@@ -114,18 +114,19 @@ class AbstractDataset:
         d_splits = self.split_dataset(ds, image_count, test_split_size) if test_split_size > 0 else [ds]
         return [self.prepare_dataset(d_split) for d_split in d_splits]
 
-    def get_dataset(self, shuffle=True) -> tf.data.AbstractDataset:
+    def get_dataset(self, shuffle=True) -> tf.data.Dataset:
         """
         gets a zipped dataset of image, label pairs
        :param shuffle: shuffles data if True
        :return: the dataset
        """
         image_count = len(self.get_image_paths())
-        ds = tf.data.AbstractDataset.zip((self.get_images(), self.get_labels()))
+        ds = tf.data.Dataset.zip((self.get_images(), self.get_labels()))
         if shuffle:
             ds = ds.shuffle(buffer_size=image_count, seed=RANDOM_SEED)
         return ds
 
+    @staticmethod
     def decode_image_from_path(file_path: str) -> object:
         """
         reads in an image file and process it
@@ -152,8 +153,8 @@ class AbstractDataset:
         return path.split(os.sep)[-1].split(EXT_SEP)[0]
 
     @staticmethod
-    def split_dataset(dataset: tf.data.AbstractDataset, image_count: int, test_split_size: float) -> Tuple[
-        tf.data.AbstractDataset, tf.data.AbstractDataset]:
+    def split_dataset(dataset: tf.data.Dataset, image_count: int, test_split_size: float) -> Tuple[
+        tf.data.Dataset, tf.data.Dataset]:
         """
         splits the dataset into two
         :param dataset: original dataset
@@ -165,7 +166,7 @@ class AbstractDataset:
         return dataset.take(image_count - test_split_size), dataset.skip(test_split_size)
 
     @staticmethod
-    def prepare_dataset(dataset: tf.data.AbstractDataset) -> tf.data.AbstractDataset:
+    def prepare_dataset(dataset: tf.data.Dataset) -> tf.data.Dataset:
         """
         applies batching and prefetching to dataset
         :param dataset: original dataset
