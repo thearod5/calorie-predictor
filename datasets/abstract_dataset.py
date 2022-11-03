@@ -12,35 +12,66 @@ from experiment.Food2Index import Food2Index
 class DatasetPathCreator:
 
     def __init__(self, dataset_dirname: str, label_filename: str):
+        """
+        Handles constructing the paths to the data
+        :param dataset_dirname: name of the directory for the dataset
+        :param label_filename: name of the file containing all image labels
+        :param data_dir: name of directory containing the data
+        """
         self.dataset_dir = self._create_dataset_dir_path(dataset_dirname)
         self.label_file = self._create_label_file_path(self.dataset_dir, label_filename)
         self.image_dir = self._create_image_dir_path(self.dataset_dir)
+        self.source_dir = self._create_source_dataset_path
 
     @staticmethod
-    def _create_dataset_dir_path(dataset_dirname):
-        return os.path.join(get_data_dir(), dataset_dirname)
+    def _create_source_dataset_path(dataset_dirname: str) -> str:
+        """
+        Create the path to the unprocessed data
+        :param dataset_dirname: name of the base directory for the dataset
+        :return: the path
+        """
+        return os.path.join(PATH_TO_PROJECT, dataset_dirname)
 
     @staticmethod
-    def _create_label_file_path(dataset_dir, label_filename):
+    def _create_dataset_dir_path(dataset_dirname: str) -> str:
+        """
+        Creates the base path to the dataset directory
+        :param dataset_dirname: name of the directory for the dataset
+        :return: the path
+        """
+        data_dir = get_data_dir()
+        return os.path.join(PATH_TO_PROJECT, data_dir, dataset_dirname)
+
+    @staticmethod
+    def _create_label_file_path(dataset_dir: str, label_filename: str) -> str:
+        """
+        Creates the path to the label file
+        :param dataset_dirname: name of the directory for the dataset
+        :param label_filename: name of the file containing all image labels
+        :return: the path
+        """
         return os.path.join(dataset_dir, label_filename)
 
     @staticmethod
-    def _create_image_dir_path(dataset_dir):
+    def _create_image_dir_path(dataset_dir: str) -> str:
+        """
+        Creates the path to the image directory
+        :param dataset_dirname: name of the directory for the dataset
+        :return: the path
+        """
         return os.path.join(dataset_dir, IMAGE_DIR)
 
 
 class AbstractDataset:
-    def __init__(self, dataset_dirname: str, label_filename: str):
+    def __init__(self, dataset_path_creator: DatasetPathCreator):
         """
-        constructor
-        :param dataset_dirname: name of the directory for the dataset
-        :param label_filename: name of the file containing all image labels
+        Represents a dataset for calorie predictor
+        :param dataset_path_creator: handles making the paths for a given dataset
         """
-        dataset_paths_creator = DatasetPathCreator(dataset_dirname, label_filename)
         self.dataset_dir = dataset_paths_creator.dataset_dir
         self.label_file = dataset_paths_creator.label_file
         self.image_dir = dataset_paths_creator.image_dir
-        self._image_paths = None
+        self.image_paths = get_image_paths(self.image_dir)
         self._images = None
         self.food2index = Food2Index()
         self.load_data()
@@ -61,23 +92,23 @@ class AbstractDataset:
         """
         pass
 
-    def get_image_paths(self) -> List:
+    @staticmethod
+    def get_image_paths(image_dir: str) -> List:
         """
         gets a list of all image filenames
+        :param image_dir: path to the image directory
         :return: a list of the image filenames
         """
-        if self._image_paths is None:
-            self._image_paths = [os.path.join(self.image_dir, filename) for filename in
-                                 os.listdir(self.image_dir) if
-                                 filename[0] != "." and filename != ""]  # ignore system files
-        return self._image_paths
+        return [os.path.join(self.image_dir, filename) for filename in
+                os.listdir(self.image_dir) if
+                filename[0] != "." and filename != ""]  # ignore system files
 
     def get_image_names(self) -> List[str]:
         """
         Gets the image names
         :return: a list of image names
         """
-        return list(map(self.get_name_from_path, self.get_image_paths()))
+        return list(map(self.get_name_from_path, self.image_paths))
 
     def get_labels(self) -> tf.data.Dataset:
         """
@@ -98,7 +129,7 @@ class AbstractDataset:
         :return: a dataset of all images
         """
         if self._images is None:
-            path_ds = tf.data.Dataset.from_tensor_slices(self.get_image_paths())
+            path_ds = tf.data.Dataset.from_tensor_slices(self.image_paths)
             self._images = path_ds.map(self.decode_image_from_path, num_parallel_calls=AUTOTUNE)
         return self._images
 
@@ -109,7 +140,7 @@ class AbstractDataset:
         :param test_split_size: the percent of the data to go in one split
         :return: list of dataset splits
         """
-        image_count = len(self.get_image_paths())
+        image_count = len(self.image_paths)
         ds = self.get_dataset(shuffle)
         d_splits = self.split_dataset(ds, image_count, test_split_size) if test_split_size > 0 else [ds]
         return [self.prepare_dataset(d_split) for d_split in d_splits]
@@ -120,7 +151,7 @@ class AbstractDataset:
        :param shuffle: shuffles data if True
        :return: the dataset
        """
-        image_count = len(self.get_image_paths())
+        image_count = len(self.image_paths)
         ds = tf.data.Dataset.zip((self.get_images(), self.get_labels()))
         if shuffle:
             ds = ds.shuffle(buffer_size=image_count, seed=RANDOM_SEED)

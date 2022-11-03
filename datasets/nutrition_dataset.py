@@ -6,7 +6,7 @@ from typing import *
 
 from tensorflow import Tensor
 
-from datasets.abstract_dataset import AbstractDataset
+from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 from constants import LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES, IMAGE_NAME_SEPARATOR
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
@@ -43,14 +43,14 @@ class NutritionDataset(AbstractDataset):
     mass_index = 2
     num_features = 6
 
-    DIR_NAME = 'nutrition5k'
     DATA_FILENAMES = ["final_dish_metadata_cafe1.csv", "final_dish_metadata_cafe2.csv"]
+    dataset_paths_creator = DatasetPathCreator(dataset_dirname='nutrition5k', label_filename='')
 
     def __init__(self, mode: Mode):
         self._dishes: Dict[str, Dish] = {}
         self._mode = mode
         self._label_files = self.DATA_FILENAMES
-        super().__init__(self.DIR_NAME, "")
+        super().__init__(self.dataset_paths_creator)
 
     def get_image_paths(self) -> List[str]:
         """

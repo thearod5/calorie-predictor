@@ -6,12 +6,14 @@ from datasets.unimib_dataset import UnimibDataset
 
 
 class UnimibProcessor(BaseProcessor):
-    PATH_TO_UNIMIB2016 = os.path.join(PATH_TO_PROJECT, UnimibDataset.DIR_NAME.upper())
-    PATH_TO_UNIMIB2016_INPUT = os.path.join(PATH_TO_UNIMIB2016, "UNIMIB2016-images")
-    PATH_TO_UNIMIB2016_OUTPUT = os.path.join(PATH_TO_OUTPUT_DIR, UnimibDataset.DIR_NAME, IMAGE_DIR)
 
     def __init__(self):
-        super().__init__(self.PATH_TO_UNIMIB2016_INPUT)
+        super().__init__(UnimibDataset.dataset_paths_creator, "UNIMIB2016-images")
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
-        return self.create_generic_single_output(entry_name, self.PATH_TO_UNIMIB2016_OUTPUT)
+        """
+        Creates the path to the output for each image
+        :param entry_name: the name of the image
+        :return: the paths
+        """
+        return self.create_generic_single_output(entry_name, self.dataset_path_creator.image_dir)
