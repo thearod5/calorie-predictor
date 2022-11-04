@@ -2,6 +2,7 @@ import os
 from abc import abstractmethod
 from typing import Dict, List, Tuple, Optional
 from tensorflow.python.keras.preprocessing.image import save_img
+import traceback
 
 from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
@@ -76,6 +77,16 @@ class BaseProcessor:
         """
         print(self.BAR)
 
+    def print_exception(self, e: Exception):
+        """
+        Prints the exception to console
+        :param e: the exception
+        :return: None
+        """
+        traceback.print_exc()
+        print("Processing %s has failed" % self.__class__.__name__)
+        print(e)
+
     def process(self, settings: ProcessingSettings) -> Optional[Exception]:
         """
         Performs processing on the dataset
@@ -90,8 +101,7 @@ class BaseProcessor:
             self.post_process(settings)
             self.print_status(override=False)
         except Exception as e:
-            print("Processing %s has failed" % self.__class__.__name__)
-            print(e)
+            self.print_exception(e)
             return e
 
     def _get_image_paths(self) -> List:

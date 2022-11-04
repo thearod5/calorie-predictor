@@ -1,7 +1,7 @@
 import csv
 import os
 from collections import Set
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from abc import ABC
 from constants import IMAGE_NAME_SEPARATOR
 from datasets.abstract_dataset import DatasetPathCreator
@@ -58,8 +58,8 @@ class NutritionJpgImagesProcessor(NutritionSubProcessor):
     INPUT_IMAGE_NAME = "rgb.png"
     IMAGE_SUFFIX = "overhead"
 
-    def __init__(self, dishes: Set):
-        super().__init__(NutritionDataset.dataset_paths_creator, "realsense_overhead", dishes)
+    def __init__(self, dataset_path_creator: DatasetPathCreator, dishes: Set):
+        super().__init__(dataset_path_creator, "realsense_overhead", dishes)
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
         """
@@ -75,8 +75,8 @@ class NutritionH264ImagesProcessor(NutritionSubProcessor):
     IMAGE_SUFFIX = "overhead"
     H264_NAME_TEMPLATE = "camera_%s.h264"
 
-    def __init__(self, dish_ids: Set):
-        super().__init__(NutritionDataset.dataset_paths_creator, "side_angles", dish_ids)
+    def __init__(self, dataset_path_creator: DatasetPathCreator, dish_ids: Set):
+        super().__init__(dataset_path_creator, "side_angles", dish_ids)
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
         """
@@ -101,6 +101,7 @@ class NutritionProcessor(BaseProcessor):
     def __init__(self):
         self.dishes = set()
         super().__init__(NutritionDataset.dataset_paths_creator, "imagery")
+        self.dataset_path_creator.source_dir = self.image_dir
 
     def pre_process(self, settings: ProcessingSettings):
         """
@@ -111,7 +112,7 @@ class NutritionProcessor(BaseProcessor):
         for filename in NutritionDataset.DATA_FILENAMES:
             self.dishes = self.dishes.union(self._create_new_metadata_csv(filename))
 
-    def process(self, settings: ProcessingSettings) -> None:
+    def process(self, settings: ProcessingSettings) -> Optional[Exception]:
         """
         Overrides the base processor to ensure processing of both Jpg and H264 images
         :param settings: contains the appropriate settings for the processing run
@@ -119,11 +120,11 @@ class NutritionProcessor(BaseProcessor):
         """
         try:
             self.pre_process(settings)
-            NutritionJpgImagesProcessor(self.dishes).process(settings)
-            NutritionH264ImagesProcessor(self.dishes).process(settings)
+            NutritionJpgImagesProcessor(self.dataset_path_creator, self.dishes).process(settings)
+            NutritionH264ImagesProcessor(self.dataset_path_creator, self.dishes).process(settings)
         except Exception as e:
-            print("Processing %s has failed" % self.__class__.__name__)
-            print(e)
+            self.print_exception(e)
+            return e
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
         """
