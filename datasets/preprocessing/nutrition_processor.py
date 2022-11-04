@@ -116,9 +116,13 @@ class NutritionProcessor(BaseProcessor):
         :param settings: contains the appropriate settings for the processing run
         :return: None
         """
-        self.pre_process(settings)
-        NutritionJpgImagesProcessor(self.dishes).process(settings)
-        NutritionH264ImagesProcessor(self.dishes).process(settings)
+        try:
+            self.pre_process(settings)
+            NutritionJpgImagesProcessor(self.dishes).process(settings)
+            NutritionH264ImagesProcessor(self.dishes).process(settings)
+        except Exception as e:
+            print("Processing %s has failed" % self.__class__.__name__)
+            print(e)
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
         """
