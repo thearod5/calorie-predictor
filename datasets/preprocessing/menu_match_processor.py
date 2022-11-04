@@ -2,9 +2,7 @@ import os
 from typing import Dict, List
 
 import yaml
-from pandas import DataFrame
-
-from constants import IMAGE_DIR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
+import pandas as pd
 from datasets.menu_match_dataset import MenuMatchDataset
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths, ProcessingSettings
 
@@ -42,7 +40,7 @@ class MenuMatchPrecessor(BaseProcessor):
         :param entry_name: the name of the image
         :return: the paths
         """
-        return self.create_generic_single_output(entry_name, self.dataset_paths_creator.image_dir)
+        return self.create_generic_single_output(entry_name, self.dataset_path_creator.image_dir)
 
     @staticmethod
     def _process_item_info() -> pd.DataFrame:
@@ -56,7 +54,7 @@ class MenuMatchPrecessor(BaseProcessor):
                 row = MenuMatchPrecessor._process_file_line(line)
                 rows.append(row)
 
-        df = DataFrame(rows[1:], columns=rows[0]).set_index(MenuMatchPrecessor.INDEX_COL)
+        df = pd.DataFrame(rows[1:], columns=rows[0]).set_index(MenuMatchPrecessor.INDEX_COL)
         df[MenuMatchPrecessor.CALORIES_COL] = df[MenuMatchPrecessor.CALORIES_COL].astype(int)
         return df
 
@@ -99,7 +97,7 @@ class MenuMatchPrecessor(BaseProcessor):
                 total_calories += item_info.loc[label][self.CALORIES_COL]
             img_id = os.path.split(img_filename)[0]
             image_calorie_mappings[img_id] = total_calories
-        with open(self.dataset_paths_creator.label_file, 'w') as file:
+        with open(self.dataset_path_creator.label_file, 'w') as file:
             yaml.dump(image_calorie_mappings, file)
 
     @staticmethod

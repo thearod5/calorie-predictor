@@ -29,5 +29,3 @@ class MenuMatchDataset(AbstractDataset):
         :return: the calories
         """
         return self.get_image_calorie_mappings()[image_name]
-
-

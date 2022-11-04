@@ -4,6 +4,7 @@ import pandas as pd
 
 from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
+
 class EucstfdDataset(AbstractDataset):
     FOOD_TYPES = ['apple', 'banana', 'bread', 'bun', 'doughnut', 'egg', 'fired_dough_twist', 'grape', 'lemon', 'litchi',
                   'mango',

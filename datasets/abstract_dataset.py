@@ -21,7 +21,7 @@ class DatasetPathCreator:
         self.dataset_dir = self._create_dataset_dir_path(dataset_dirname)
         self.label_file = self._create_label_file_path(self.dataset_dir, label_filename)
         self.image_dir = self._create_image_dir_path(self.dataset_dir)
-        self.source_dir = self._create_source_dataset_path
+        self.source_dir = self._create_source_dataset_path(dataset_dirname)
 
     @staticmethod
     def _create_source_dataset_path(dataset_dirname: str) -> str:
@@ -68,10 +68,10 @@ class AbstractDataset:
         Represents a dataset for calorie predictor
         :param dataset_path_creator: handles making the paths for a given dataset
         """
-        self.dataset_dir = dataset_paths_creator.dataset_dir
-        self.label_file = dataset_paths_creator.label_file
-        self.image_dir = dataset_paths_creator.image_dir
-        self.image_paths = get_image_paths(self.image_dir)
+        self.dataset_dir = dataset_path_creator.dataset_dir
+        self.label_file = dataset_path_creator.label_file
+        self.image_dir = dataset_path_creator.image_dir
+        self.image_paths = self.get_image_paths(self.image_dir)
         self._images = None
         self.food2index = Food2Index()
         self.load_data()
@@ -99,8 +99,8 @@ class AbstractDataset:
         :param image_dir: path to the image directory
         :return: a list of the image filenames
         """
-        return [os.path.join(self.image_dir, filename) for filename in
-                os.listdir(self.image_dir) if
+        return [os.path.join(image_dir, filename) for filename in
+                os.listdir(image_dir) if
                 filename[0] != "." and filename != ""]  # ignore system files
 
     def get_image_names(self) -> List[str]:
@@ -181,7 +181,7 @@ class AbstractDataset:
         :param path: the path
         :return: the name
         """
-        return os.path.split(entry_name)[-1].split(EXT_SEP)[0]
+        return os.path.split(path)[-1].split(EXT_SEP)[0]
 
     @staticmethod
     def split_dataset(dataset: tf.data.Dataset, image_count: int, test_split_size: float) -> Tuple[

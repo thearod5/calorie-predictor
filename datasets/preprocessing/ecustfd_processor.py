@@ -1,8 +1,5 @@
-import os
 
-from datasets.abstract_dataset import DatasetPathCreator
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
-from constants import PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
 from datasets.eucstfd_dataset import EucstfdDataset
 
 
@@ -20,4 +17,4 @@ class EcustfdProcessor(BaseProcessor):
         :param entry_name: the name of the image
         :return: the paths
         """
-        return self.create_generic_single_output(entry_name, self.output_dataset_path_creator.image_dir)
+        return self.create_generic_single_output(entry_name, self.dataset_path_creator.image_dir)

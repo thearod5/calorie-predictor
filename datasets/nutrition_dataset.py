@@ -104,7 +104,7 @@ class NutritionDataset(AbstractDataset):
                     if dish_id in processed_ids or not self.is_mode_value_valid(dish_mode_value):
                         if LOG_SKIPPED_ENTRIES:
                             logger.debug(
-                                dish_id + ": was already processed or has invalid value for mode " + self._mode)
+                                dish_id + ": was already processed or has invalid value for mode " + self._mode.value)
                         continue
                     self._dishes[dish_id] = self._parse_row_into_dish(row)
                     processed_ids.append(dish_id)

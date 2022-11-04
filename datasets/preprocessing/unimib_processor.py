@@ -1,7 +1,6 @@
 import os
 
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
-from constants import PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT, IMAGE_DIR
 from datasets.unimib_dataset import UnimibDataset
 
 

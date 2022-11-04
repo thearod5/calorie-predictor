@@ -1,8 +1,10 @@
 import csv
 import os
+from collections import Set
 from typing import List, Tuple
 from abc import ABC
-from constants import IMAGE_DIR, IMAGE_NAME_SEPARATOR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
+from constants import IMAGE_NAME_SEPARATOR
+from datasets.abstract_dataset import DatasetPathCreator
 from datasets.nutrition_dataset import NutritionDataset
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths, ProcessingSettings
 import pandas as pd
@@ -57,7 +59,7 @@ class NutritionJpgImagesProcessor(NutritionSubProcessor):
     IMAGE_SUFFIX = "overhead"
 
     def __init__(self, dishes: Set):
-        super().__init__(NutritionDataset.dataset_paths_creator, "realsense_overhead", dish_ids)
+        super().__init__(NutritionDataset.dataset_paths_creator, "realsense_overhead", dishes)
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
         """
@@ -96,7 +98,7 @@ class NutritionProcessor(BaseProcessor):
     LABEL2REMOVE = "ingr_"
 
     def __init__(self):
-        self.dishes = {}
+        self.dishes = set()
         super().__init__(NutritionDataset.dataset_paths_creator, "imagery")
 
     def pre_process(self, settings: ProcessingSettings):
@@ -105,8 +107,8 @@ class NutritionProcessor(BaseProcessor):
         :param settings: contains the appropriate settings for the processing run
         :return: None
         """
-        for filename in enumerate(NutritionDataset.DATA_FILENAMES):
-            self.dishes[filename] = self._create_new_metadata_csv(filename)
+        for filename in NutritionDataset.DATA_FILENAMES:
+            self.dishes = self.dishes.union(self._create_new_metadata_csv(filename))
 
     def process(self, settings: ProcessingSettings) -> None:
         """

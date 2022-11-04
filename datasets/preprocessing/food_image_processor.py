@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 import yaml
 
-from constants import IMAGE_DIR, PATH_TO_OUTPUT_DIR, PATH_TO_PROJECT
+from constants import IMAGE_DIR
 from datasets.food_images_dataset import FoodImagesDataset
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths, ProcessingSettings
 
@@ -29,7 +29,7 @@ class FoodImageProcessor(BaseProcessor):
             if image_name[0] == ".":
                 continue
             input_path = os.path.join(path_to_food_category, image_name)
-            output_directory_path = os.path.join(self.dataset_paths_creator.image_dir, food_category)
+            output_directory_path = os.path.join(self.dataset_path_creator.image_dir, food_category)
             if not os.path.isdir(output_directory_path):
                 os.mkdir(output_directory_path)
             output_image_path = os.path.join(output_directory_path, image_name)

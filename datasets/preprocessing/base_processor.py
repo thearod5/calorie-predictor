@@ -1,7 +1,6 @@
 import os
 from abc import abstractmethod
 from typing import Dict, List, Tuple, Optional
-from collections import NamedTuple
 from tensorflow.python.keras.preprocessing.image import save_img
 
 from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
