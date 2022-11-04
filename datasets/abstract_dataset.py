@@ -181,7 +181,7 @@ class AbstractDataset:
         :param path: the path
         :return: the name
         """
-        return path.split(os.sep)[-1].split(EXT_SEP)[0]
+        return os.path.split(entry_name)[-1].split(EXT_SEP)[0]
 
     @staticmethod
     def split_dataset(dataset: tf.data.Dataset, image_count: int, test_split_size: float) -> Tuple[

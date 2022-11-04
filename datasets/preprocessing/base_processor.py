@@ -87,13 +87,20 @@ class BaseProcessor:
         print("Processing : " + self.__class__.__name__)
         try:
             self.pre_process(settings)
-            self.resize_images(AbstractDataset.get_image_paths(self.image_dir), settings)
+            self.resize_images(self._get_image_paths(), settings)
             self.post_process(settings)
             self.print_status(override=False)
         except Exception as e:
             print("Processing %s has failed" % self.__class__.__name__)
             print(e)
             return e
+
+    def _get_image_paths(self) -> List:
+        """
+        Gets all paths pointing to the images in a dataset
+        :return: a list of paths
+        """
+        return AbstractDataset.get_image_paths(self.image_dir)
 
     def resize_images(self, image_paths: List, settings: ProcessingSettings):
         """
@@ -140,13 +147,13 @@ class BaseProcessor:
             return e
 
     @staticmethod
-    def create_generic_single_output(path_to_input_images: str, output_folder: str) -> ProcessingPaths:
+    def create_generic_single_output(entry_name: str, output_folder: str) -> ProcessingPaths:
         """
         Creates a tuple containing the input and output image path for a dataset with a single path per image
-        :param path_to_input_images: path to input images
+        :param entry_name: path to input images
         :param output_folder: the output dir name
         :return: a tuple containing the input and output image path inside of a list (in case of multiple paths)
         """
-        image_file_name = os.path.split(path_to_input_images)[1]
+        image_file_name = os.path.split(entry_name)[1]
         output_image_path = os.path.join(output_folder, image_file_name)
-        return [(path_to_input_images, output_image_path)]
+        return [(entry_name, output_image_path)]

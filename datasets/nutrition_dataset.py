@@ -52,15 +52,6 @@ class NutritionDataset(AbstractDataset):
         self._label_files = self.DATA_FILENAMES
         super().__init__(self.dataset_paths_creator)
 
-    def get_image_paths(self) -> List[str]:
-        """
-        Overrides parent paths to filter out images whose corresponding dishes do not
-        have sufficient or valid data.
-        :return:
-        """
-        return list(filter(lambda p: self._get_image_dish(self.get_name_from_path(p)) is not None,
-                           super().get_image_paths()))
-
     def get_label(self, image_name: str) -> Union[float, Tensor]:
         """
         gets label (determined by the mode) corresponding to image
@@ -75,17 +66,25 @@ class NutritionDataset(AbstractDataset):
             return self.food2index.to_ingredients_tensor(label)
         return label
 
+    @staticmethod
+    def get_dish_id_from_image_name(image_name: str) -> str:
+        """
+        Removes the camera identifier if in the image name and returns the dish id
+        param image_name: name of the image
+        :return: the dish id
+        """
+        return image_name.split(IMAGE_NAME_SEPARATOR)[0] if IMAGE_NAME_SEPARATOR in image_name else image_name
+
     def _get_image_dish(self, image_name: str) -> Optional[Dish]:
         """
         Gets the Dish in an image
         :param image_name: name of the image
         :return: the Dish in image
         """
-        if IMAGE_NAME_SEPARATOR in image_name:
-            image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
-        if image_name not in self._dishes:
+        dish_id = self.get_dish_id_from_image_name(image_name)
+        if dish_id not in self._dishes:
             return None
-        return self._dishes[image_name]
+        return self._dishes[dish_id]
 
     def load_data(self) -> None:
         """
