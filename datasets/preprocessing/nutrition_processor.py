@@ -95,6 +95,7 @@ class NutritionH264ImagesProcessor(NutritionSubProcessor):
 
 class NutritionProcessor(BaseProcessor):
     ORIG_METADATA_FILES = ['dish_metadata_cafe1.csv', 'dish_metadata_cafe2.csv']
+    METADATA_DIR = "metadata"
     LABEL2REMOVE = "ingr_"
 
     def __init__(self):
@@ -137,7 +138,7 @@ class NutritionProcessor(BaseProcessor):
         :return: a set containing the ids of all dishes in the metadata
         """
         new_data_filepath = os.path.join(self.dataset_path_creator.dataset_dir, filename)
-        orig_data_filepath = os.path.join(self.dataset_path_creator.source_dir, filename)
+        orig_data_filepath = os.path.join(self.dataset_path_creator.source_dir, self.METADATA_DIR, filename)
         processed_rows = []
         dishes = set()
         with open(orig_data_filepath, newline='') as orig_file:
