@@ -4,38 +4,36 @@ from typing import Dict, List
 import yaml
 from tensorflow import Tensor
 
-from datasets.abstract_dataset import AbstractDataset
+from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 from experiment.Food2Index import Food2Index
 from constants import IMAGE_NAME_SEPARATOR
 
 
 class FoodImagesDataset(AbstractDataset):
-    DIR_NAME = 'food_images'
-    DATA_FILENAME = 'labels.yml'
+    dataset_paths_creator = DatasetPathCreator(dataset_dirname='food_images', label_filename='labels.yml')
 
     def __init__(self):
         self._image_class_mappings = {}
-        super().__init__(self.DIR_NAME, self.DATA_FILENAME)
+        super().__init__(self.dataset_paths_creator)
 
-    def get_image_paths(self) -> List:
+    @staticmethod
+    def get_image_paths(image_dir: str) -> List:
         """
         Returns images by listing directories of categories and listing the images
         within those directories.
         :return: a list of the image filenames
         """
-        if self._image_paths is None:
-            paths = []
-            for dir_name in os.listdir(self.image_dir):
-                if dir_name[0] == ".":
+        paths = []
+        for dir_name in os.listdir(image_dir):
+            if dir_name[0] == ".":
+                continue
+            path_to_dir = os.path.join(image_dir, dir_name)
+            for file_name in os.listdir(path_to_dir):
+                if file_name[0] == ".":
                     continue
-                path_to_dir = os.path.join(self.image_dir, dir_name)
-                for file_name in os.listdir(path_to_dir):
-                    if file_name[0] == ".":
-                        continue
-                    path_to_file = os.path.join(path_to_dir, file_name)
-                    paths.append(path_to_file)
-            self._image_paths = paths
-        return self._image_paths
+                path_to_file = os.path.join(path_to_dir, file_name)
+                paths.append(path_to_file)
+        return paths
 
     def get_label(self, image_name: str) -> Tensor:
         """

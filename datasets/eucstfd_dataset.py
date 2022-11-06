@@ -2,7 +2,7 @@ from typing import List
 
 import pandas as pd
 
-from datasets.abstract_dataset import AbstractDataset
+from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
 
 class EucstfdDataset(AbstractDataset):
@@ -11,13 +11,12 @@ class EucstfdDataset(AbstractDataset):
                   'mix', 'mooncake', 'orange', 'pear', 'peach', 'plum', 'qiwi', 'sachima', 'tomato']
     LABEL_COL = 'weight(g)'
     ID_COL = 'id'
-    DIR_NAME = 'ecustfd'
-    DATA_FILENAME = 'density.xls'
+    dataset_paths_creator = DatasetPathCreator(dataset_dirname='ecustfd', label_filename='density.xls')
 
     def __init__(self, use_ingredients_mass=False):
         self._food_info = None
         self.use_ingredients_mass = use_ingredients_mass
-        super().__init__(self.DIR_NAME, self.DATA_FILENAME)
+        super().__init__(self.dataset_paths_creator)
 
     def get_food_info(self) -> pd.DataFrame:
         """
