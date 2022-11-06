@@ -1,8 +1,8 @@
-import os
-from abc import abstractmethod
-from typing import Dict, List, Tuple, Optional
-from tensorflow.python.keras.preprocessing.image import save_img
 import traceback
+from abc import abstractmethod
+from typing import Dict, List, Optional, Tuple
+
+from keras_preprocessing.image import save_img
 
 from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
@@ -22,6 +22,9 @@ class ProcessingSettings:
         self.throw_errors = throw_errors
 
 
+import os
+
+
 class BaseProcessor:
     BAR = "-" * 50
 
@@ -32,9 +35,10 @@ class BaseProcessor:
         :param source_image_dir: the directory containing the source (unprocessed) images
         """
         self.dataset_path_creator = dataset_path_creator
-        self.image_dir = os.path.join(dataset_path_creator.source_dir, source_image_dir)
+        self.input_image_dir = os.path.join(dataset_path_creator.source_dir, source_image_dir)
         self.n_processed = 0
         self.n_failed = 0
+        os.makedirs(dataset_path_creator.image_dir, exist_ok=True)
 
     @abstractmethod
     def create_output_paths(self, path_to_input_images: str) -> ProcessingPaths:
@@ -109,7 +113,7 @@ class BaseProcessor:
         Gets all paths pointing to the images in a dataset
         :return: a list of paths
         """
-        return AbstractDataset.get_image_paths(self.image_dir)
+        return AbstractDataset.get_image_paths(self.input_image_dir)
 
     def resize_images(self, image_paths: List, settings: ProcessingSettings):
         """
@@ -130,7 +134,8 @@ class BaseProcessor:
                 self.print_status()
 
     @staticmethod
-    def read_resize_save_image(input_image_path: str, output_image_path: str, settings: ProcessingSettings) -> Optional[Exception]:
+    def read_resize_save_image(input_image_path: str, output_image_path: str, settings: ProcessingSettings) -> Optional[
+        Exception]:
         """
         Reads, resizes and saves image
         :param input_image_path: the path to the input image

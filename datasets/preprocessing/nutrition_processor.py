@@ -1,13 +1,15 @@
 import csv
 import os
-from collections import Set
-from typing import List, Tuple, Optional
 from abc import ABC
+from collections import Set
+from typing import List, Optional, Tuple
+
+import pandas as pd
+
 from constants import IMAGE_NAME_SEPARATOR
 from datasets.abstract_dataset import DatasetPathCreator
 from datasets.nutrition_dataset import NutritionDataset
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths, ProcessingSettings
-import pandas as pd
 
 
 class NutritionSubProcessor(BaseProcessor, ABC):
@@ -101,7 +103,7 @@ class NutritionProcessor(BaseProcessor):
     def __init__(self):
         self.dishes = set()
         super().__init__(NutritionDataset.dataset_paths_creator, "imagery")
-        self.dataset_path_creator.source_dir = self.image_dir
+        self.dataset_path_creator.source_dir = self.input_image_dir
 
     def pre_process(self, settings: ProcessingSettings):
         """
@@ -148,5 +150,5 @@ class NutritionProcessor(BaseProcessor):
                 processed_row = [item for item in row if self.LABEL2REMOVE not in item]
                 processed_rows.append(processed_row)
                 dishes.add(processed_row[NutritionDataset.id_index])
-        pd.DataFrame(processed_rows[1:], columns=processed_rows[0]).to_csv(new_data_filepath)
+        pd.DataFrame(processed_rows).to_csv(new_data_filepath)
         return dishes

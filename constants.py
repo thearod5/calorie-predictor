@@ -1,7 +1,10 @@
 import os
 from os.path import *
 
-ENV = "test"  # dev | prod
+from dotenv import load_dotenv
+
+load_dotenv()
+ENV = os.getenv("ENV", "test")
 
 PROJECT_DIR = dirname(abspath(__file__))
 PATH_TO_PROJECT = "/Volumes/Betito HDD/Datasets/calorie-predictor"
