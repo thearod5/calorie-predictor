@@ -6,8 +6,8 @@ from typing import *
 
 from tensorflow import Tensor
 
+from constants import IMAGE_NAME_SEPARATOR, LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES
 from datasets.abstract_dataset import AbstractDataset
-from constants import LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES, IMAGE_NAME_SEPARATOR
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()
@@ -38,13 +38,13 @@ DatasetMap = {
 
 
 class NutritionDataset(AbstractDataset):
-    id_index = 0
-    calorie_index = 1
-    mass_index = 2
-    num_features = 6
+    id_index = 1
+    calorie_index = 2
+    mass_index = 3
+    num_features = 7
 
     DIR_NAME = 'nutrition5k'
-    DATA_FILENAMES = ["final_dish_metadata_cafe1.csv", "final_dish_metadata_cafe2.csv"]
+    DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
 
     def __init__(self, mode: Mode):
         self._dishes: Dict[str, Dish] = {}
