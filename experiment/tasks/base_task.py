@@ -7,8 +7,9 @@ import numpy as np
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Dropout, GlobalAveragePooling2D
+from keras.losses import mean_absolute_error
+from keras_preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
-from tensorflow.keras.metrics import mean_absolute_error
 from tensorflow.python.data import Dataset
 
 from experiment.Food2Index import Food2Index
@@ -37,6 +38,18 @@ def sample_data(data: Dataset):
         plt.imshow(image[0, :, :, :])
         plt.title(" ".join(ingredient_index_map.to_ingredients_list(label[0])))
         plt.axis("off")
+
+
+augmentation_generator = ImageDataGenerator(rotation_range=15,
+                                            width_shift_range=0.1,
+                                            height_shift_range=0.1,
+                                            shear_range=0.01,
+                                            zoom_range=[0.9, 1.25],
+                                            horizontal_flip=True,
+                                            vertical_flip=False,
+                                            fill_mode='reflect',
+                                            data_format='channels_last',
+                                            brightness_range=[0.5, 1.5])
 
 
 class Task:
@@ -151,7 +164,8 @@ class Task:
             mode=self.task_mode,
             verbose=1,
             save_best_only=True)
-        self.model.fit(self.get_training_data(),
+        training_data = self.get_training_data()
+        self.model.fit(self.augment_dataset(training_data),
                        epochs=self.n_epochs,
                        validation_data=self.get_validation_data(),
                        callbacks=[model_checkpoint_callback])
@@ -161,6 +175,16 @@ class Task:
         y_pred = self.model.predict(data)
         y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
+
+    @staticmethod
+    def augment_dataset(in_gen):
+        for in_x, in_y in in_gen:
+            g_x = augmentation_generator.flow(in_x,
+                                              in_y,
+                                              batch_size=in_x.shape[0])
+            x, y = next(g_x)
+
+            yield x, y
 
     @staticmethod
     def initialize_dict_entry(dict_, key, init_val=0):
@@ -281,6 +305,3 @@ class ClassificationTask(Task, ABC):
         logger.info("False Negatives: %s" % FN.sum())
         logger.info("True Positive: %s" % TP.sum())
         logger.info("True Negative: %s" % TN.sum())
-
-
-
