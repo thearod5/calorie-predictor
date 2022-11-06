@@ -1,19 +1,19 @@
 from typing import Callable, Dict
 
 import numpy as np
-import tensorflow as tf
+from tensorflow.python.data import Dataset
 
-from datasets.dataset import Dataset
+from constants import CLASSIFICATION_DATASETS, N_EPOCHS, TEST_SPLIT_SIZE
+from datasets.abstract_dataset import AbstractDataset
 from datasets.food_images_dataset import FoodImagesDataset
 from datasets.nutrition_dataset import Mode, NutritionDataset
 from datasets.unimib_dataset import UnimibDataset
-from constants import CLASSIFICATION_DATASETS, N_EPOCHS, TEST_SPLIT_SIZE
 from experiment.Food2Index import Food2Index
 from experiment.tasks.base_task import ClassificationTask
 
 
 class FoodClassificationTask(ClassificationTask):
-    dataset_constructors: Dict[str, Callable[[], tf.data.AbstractDataset]] = {
+    dataset_constructors: Dict[str, Callable[[], AbstractDataset]] = {
         "unimib": lambda: UnimibDataset(),
         "food_images": lambda: FoodImagesDataset(),
         "nutrition5k": lambda: NutritionDataset(mode=Mode.INGREDIENTS)
@@ -34,7 +34,7 @@ class FoodClassificationTask(ClassificationTask):
             raise Exception("%s is not one of %s" % (name, ", ".join(self.dataset_constructors.keys())))
         return Dataset.prepare_dataset(self.dataset_constructors[name]().get_dataset(shuffle=False))
 
-    def get_datasets(self, dataset_names) -> [tf.data.AbstractDataset]:
+    def get_datasets(self, dataset_names) -> [AbstractDataset]:
         return [self.dataset_constructors[d_name]() for d_name in self.dataset_constructors if d_name in dataset_names]
 
     def get_food_count(self):
@@ -55,7 +55,7 @@ class FoodClassificationTask(ClassificationTask):
         return self._test
 
     @staticmethod
-    def get_food_counts(dataset: tf.data.AbstractDataset):
+    def get_food_counts(dataset: AbstractDataset):
         food2index = Food2Index()
         food2count = {}
         for batch_images, batch_labels in dataset:
@@ -72,12 +72,3 @@ class FoodClassificationTask(ClassificationTask):
                         food2count[food_name] = 1
 
         return food2count
-
-
-
-
-
-
-
-
-
