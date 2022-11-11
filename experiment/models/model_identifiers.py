@@ -15,11 +15,4 @@ class BaseModel(Enum):
     ENSEMBLE = EnsembleModel
 
 
-base = {
-    "VGG": BaseModel.VGG,
-    "RESNET": BaseModel.RESNET,
-    "XCEPTION": BaseModel.XCEPTION,
-    "TEST": TestModel,
-    "ENSEMBLE": EnsembleModel
-}
 PRE_TRAINED_MODELS = [BaseModel.VGG, BaseModel.RESNET, BaseModel.XCEPTION]

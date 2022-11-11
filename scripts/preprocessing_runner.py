@@ -21,14 +21,12 @@ if __name__ == "__main__":
 
     SHOW_ERRORS = True
     THROW_ERROR = True
-    TARGET_RUN = True
     settings = ProcessingSettings(SHOW_ERRORS, THROW_ERROR)
     """
     Processing 
     """
     NutritionProcessor().process(settings)
-    if not TARGET_RUN:
-        EcustfdProcessor().process(settings)
-        MenuMatchPrecessor().process(settings)
-        UnimibProcessor().process(settings)
-        FoodImageProcessor().process(settings)
+    EcustfdProcessor().process(settings)
+    MenuMatchPrecessor().process(settings)
+    UnimibProcessor().process(settings)
+    FoodImageProcessor().process(settings)
