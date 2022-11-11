@@ -19,8 +19,8 @@ if __name__ == "__main__":
     Runtime Variables
     """
 
-    SHOW_ERRORS = True
-    THROW_ERROR = True
+    SHOW_ERRORS = False
+    THROW_ERROR = False
     settings = ProcessingSettings(SHOW_ERRORS, THROW_ERROR)
     """
     Processing 
