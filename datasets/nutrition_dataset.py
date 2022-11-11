@@ -44,7 +44,7 @@ class NutritionDataset(AbstractDataset):
     num_features = 7
 
     DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
-    dataset_paths_creator = DatasetPathCreator(dataset_dirname='nutrition5k', label_filename='')
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='nutrition5k', label_filename='')
 
     def __init__(self, mode: Mode):
         self._dishes: Dict[str, Dish] = {}

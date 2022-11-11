@@ -4,13 +4,13 @@ from typing import Dict, List
 import yaml
 from tensorflow import Tensor
 
+from constants import IMAGE_NAME_SEPARATOR
 from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 from experiment.Food2Index import Food2Index
-from constants import IMAGE_NAME_SEPARATOR
 
 
 class FoodImagesDataset(AbstractDataset):
-    dataset_paths_creator = DatasetPathCreator(dataset_dirname='food_images', label_filename='labels.yml')
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='food_images', label_filename='labels.yml')
 
     def __init__(self):
         self._image_class_mappings = {}

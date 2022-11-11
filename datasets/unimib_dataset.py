@@ -6,7 +6,7 @@ from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 class UnimibDataset(AbstractDataset):
     ID_COL = "image_name"
     LABEL_COL = "class"
-    dataset_paths_creator = DatasetPathCreator(dataset_dirname="unimib2016", label_filename="annotations.xlsx")
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name="unimib2016", label_filename="annotations.xlsx")
 
     def __init__(self):
         self._food_info: pd.DataFrame = pd.DataFrame()

@@ -19,14 +19,16 @@ if __name__ == "__main__":
     Runtime Variables
     """
 
-    SHOW_ERRORS = False
-    THROW_ERROR = False
+    SHOW_ERRORS = True
+    THROW_ERROR = True
+    TARGET_RUN = True
     settings = ProcessingSettings(SHOW_ERRORS, THROW_ERROR)
     """
     Processing 
     """
     NutritionProcessor().process(settings)
-    EcustfdProcessor().process(settings)
-    MenuMatchPrecessor().process(settings)
-    UnimibProcessor().process(settings)
-    FoodImageProcessor().process(settings)
+    if not TARGET_RUN:
+        EcustfdProcessor().process(settings)
+        MenuMatchPrecessor().process(settings)
+        UnimibProcessor().process(settings)
+        FoodImageProcessor().process(settings)

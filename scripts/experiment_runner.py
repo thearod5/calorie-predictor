@@ -8,10 +8,6 @@ from enum import Enum
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.append(path_to_src)
 
-from experiment.tasks.food_classification_task import FoodClassificationTask
-from experiment.tasks.calories_task import CaloriePredictionTask
-from experiment.tasks.mass_task import MassPredictionTask
-from experiment.tasks.test_task import TestTask
 from constants import N_EPOCHS
 from experiment.models.model_identifiers import BaseModel
 from experiment.tasks.base_task import logger, set_data, BaseTask

@@ -1,21 +1,21 @@
 import logging.config
 from abc import abstractmethod
 from enum import Enum
-from typing import Tuple, List, Any, Dict
+from typing import Any, Dict, List, Tuple
 
+import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Dropout, GlobalAveragePooling2D
 from keras.losses import mean_absolute_error
 from keras_preprocessing.image import ImageDataGenerator
-from sklearn.metrics import confusion_matrix
 from tensorflow.python.data import Dataset
-import keras
 
+from datasets.abstract_dataset import AbstractDataset
 from experiment.Food2Index import Food2Index
-from experiment.models.model_identifiers import BaseModel, PRE_TRAINED_MODELS
 from experiment.models.checkpoint_creator import get_checkpoint_path
+from experiment.models.model_identifiers import BaseModel, PRE_TRAINED_MODELS
 from logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
@@ -51,6 +51,7 @@ augmentation_generator = ImageDataGenerator(rotation_range=15,
                                             fill_mode='reflect',
                                             data_format='channels_last',
                                             brightness_range=[0.5, 1.5])
+
 
 class BaseTask:
     def __init__(self, base_model: BaseModel, n_outputs: int = 1, n_epochs: int = N_EPOCHS, load_weights: bool = True,
@@ -165,7 +166,7 @@ class BaseTask:
          :return the model
          """
         base_model_class = base_model.value
-        task_name = self.__class__.__name__,
+        task_name = self.__class__.__name__
         if pre_trained_model:
             inputs = tf.keras.Input(shape=INPUT_SHAPE)
             base_model_obj = base_model_class(
@@ -276,7 +277,7 @@ class BaseTask:
         dict_[key] += 1
 
     @staticmethod
-    def combine_datasets(datasets: List[tf.data.AbstractDataset]) -> Tuple[tf.data.AbstractDataset, int]:
+    def combine_datasets(datasets: List[AbstractDataset]) -> Tuple[AbstractDataset, int]:
         """
         Combines the datasets in the list
         :param datasets: a list of a datasets
@@ -290,7 +291,7 @@ class BaseTask:
         return dataset, image_count
 
     @staticmethod
-    def print_datasets(datasets: List[tf.data.AbstractDataset], image_count: int):
+    def print_datasets(datasets: List[AbstractDataset], image_count: int):
         """
         Prints the names of all datasets in the list and the total image count
         :param datasets: a list of datasets
