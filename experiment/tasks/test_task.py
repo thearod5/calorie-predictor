@@ -1,9 +1,10 @@
 from datasets.menu_match_dataset import MenuMatchDataset
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
-from experiment.tasks.base_task import RegressionTask, TaskType
+from experiment.tasks.base_task import TaskType
+from experiment.tasks.regression_task import RegressionBaseTask
 
 
-class TestTask(RegressionTask):
+class TestTask(RegressionBaseTask):
     def __init__(self, base_model, n_epochs=N_EPOCHS):
         super().__init__(base_model, n_epochs=n_epochs)
         dataset = MenuMatchDataset()
