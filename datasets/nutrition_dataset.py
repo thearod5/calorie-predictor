@@ -41,7 +41,7 @@ class NutritionDataset(AbstractDataset):
     id_index = 0
     calorie_index = 1
     mass_index = 2
-    num_features = 7
+    num_features = 6
 
     DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
     dataset_paths_creator = DatasetPathCreator(dataset_dir_name='nutrition5k', label_filename='')
