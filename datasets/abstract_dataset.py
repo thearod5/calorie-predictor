@@ -103,6 +103,15 @@ class AbstractDataset:
                 os.listdir(image_dir) if
                 filename[0] != "." and filename != ""]  # ignore system files
 
+    def _remove_unlabeled_images(self):
+        labeled_image_paths = []
+        for image_path in self.image_paths:
+            image_name = self.get_name_from_path(image_path)
+            label = self.get_label(image_name)
+            if label is not None:
+                labeled_image_paths.append(image_path)
+        self.image_paths = labeled_image_paths
+
     def get_image_names(self) -> List[str]:
         """
         Gets the image names
@@ -151,6 +160,7 @@ class AbstractDataset:
        :param shuffle: shuffles data if True
        :return: the dataset
        """
+        self._remove_unlabeled_images()
         image_count = len(self.image_paths)
         ds = tf.data.Dataset.zip((self.get_images(), self.get_labels()))
         if shuffle:

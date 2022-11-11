@@ -38,9 +38,9 @@ DatasetMap = {
 
 
 class NutritionDataset(AbstractDataset):
-    id_index = 1
-    calorie_index = 2
-    mass_index = 3
+    id_index = 0
+    calorie_index = 1
+    mass_index = 2
     num_features = 7
 
     DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
@@ -60,7 +60,7 @@ class NutritionDataset(AbstractDataset):
         """
         dish = self._get_image_dish(image_name)
         if dish is None:
-            raise Exception("No labels found for image:" + image_name)
+            return None
         label = getattr(dish, self._mode.value)
         if self._mode == Mode.INGREDIENTS:
             return self.food2index.to_ingredients_tensor(label)
