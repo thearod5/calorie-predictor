@@ -1,18 +1,21 @@
 import logging.config
 from abc import abstractmethod
 from enum import Enum
-from typing import Tuple, List, Any, Dict
+from typing import Any, Dict, List, Tuple
 
+import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Dropout, GlobalAveragePooling2D
+from keras.losses import mean_absolute_error
+from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.python.data import Dataset
-import keras
 
+from datasets.abstract_dataset import AbstractDataset
 from experiment.Food2Index import Food2Index
-from experiment.models.model_identifiers import BaseModel, PRE_TRAINED_MODELS
 from experiment.models.checkpoint_creator import get_checkpoint_path
+from experiment.models.model_identifiers import BaseModel, PRE_TRAINED_MODELS
 from logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
@@ -36,6 +39,18 @@ def sample_data(data: Dataset):
         plt.imshow(image[0, :, :, :])
         plt.title(" ".join(ingredient_index_map.to_ingredients_list(label[0])))
         plt.axis("off")
+
+
+augmentation_generator = ImageDataGenerator(rotation_range=15,
+                                            width_shift_range=0.1,
+                                            height_shift_range=0.1,
+                                            shear_range=0.01,
+                                            zoom_range=[0.9, 1.25],
+                                            horizontal_flip=True,
+                                            vertical_flip=False,
+                                            fill_mode='reflect',
+                                            data_format='channels_last',
+                                            brightness_range=[0.5, 1.5])
 
 
 class BaseTask:
@@ -151,7 +166,7 @@ class BaseTask:
          :return the model
          """
         base_model_class = base_model.value
-        task_name = self.__class__.__name__,
+        task_name = self.__class__.__name__
         if pre_trained_model:
             inputs = tf.keras.Input(shape=INPUT_SHAPE)
             base_model_obj = base_model_class(
@@ -207,7 +222,8 @@ class BaseTask:
             mode=self.task_mode,
             verbose=1,
             save_best_only=True)
-        self.model.fit(self.get_training_data(),
+        training_data = self.get_training_data()
+        self.model.fit(self.augment_dataset(training_data),
                        epochs=self.n_epochs,
                        validation_data=self.get_validation_data(),
                        callbacks=[model_checkpoint_callback])
@@ -222,6 +238,16 @@ class BaseTask:
         y_pred = self.model.predict(data)
         y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
+
+    @staticmethod
+    def augment_dataset(in_gen):
+        for in_x, in_y in in_gen:
+            g_x = augmentation_generator.flow(in_x,
+                                              in_y,
+                                              batch_size=in_x.shape[0])
+            x, y = next(g_x)
+
+            yield x, y
 
     @staticmethod
     def initialize_dict_entry(dict_: dict, key: str, init_val=0) -> Dict:
@@ -251,7 +277,7 @@ class BaseTask:
         dict_[key] += 1
 
     @staticmethod
-    def combine_datasets(datasets: List[tf.data.AbstractDataset]) -> Tuple[tf.data.AbstractDataset, int]:
+    def combine_datasets(datasets: List[AbstractDataset]) -> Tuple[AbstractDataset, int]:
         """
         Combines the datasets in the list
         :param datasets: a list of a datasets
@@ -265,7 +291,7 @@ class BaseTask:
         return dataset, image_count
 
     @staticmethod
-    def print_datasets(datasets: List[tf.data.AbstractDataset], image_count: int):
+    def print_datasets(datasets: List[AbstractDataset], image_count: int):
         """
         Prints the names of all datasets in the list and the total image count
         :param datasets: a list of datasets

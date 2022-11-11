@@ -11,7 +11,7 @@ class EucstfdDataset(AbstractDataset):
                   'mix', 'mooncake', 'orange', 'pear', 'peach', 'plum', 'qiwi', 'sachima', 'tomato']
     LABEL_COL = 'weight(g)'
     ID_COL = 'id'
-    dataset_paths_creator = DatasetPathCreator(dataset_dirname='ecustfd', label_filename='density.xls')
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='ecustfd', label_filename='density.xls')
 
     def __init__(self, use_ingredients_mass=False):
         self._food_info = None

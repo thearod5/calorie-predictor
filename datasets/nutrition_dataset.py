@@ -44,7 +44,7 @@ class NutritionDataset(AbstractDataset):
     num_features = 6
 
     DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
-    dataset_paths_creator = DatasetPathCreator(dataset_dirname='nutrition5k', label_filename='')
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='nutrition5k', label_filename='')
 
     def __init__(self, mode: Mode):
         self._dishes: Dict[str, Dish] = {}
@@ -60,7 +60,7 @@ class NutritionDataset(AbstractDataset):
         """
         dish = self._get_image_dish(image_name)
         if dish is None:
-            raise Exception("No labels found for image:" + image_name)
+            return None
         label = getattr(dish, self._mode.value)
         if self._mode == Mode.INGREDIENTS:
             return self.food2index.to_ingredients_tensor(label)
@@ -97,7 +97,9 @@ class NutritionDataset(AbstractDataset):
             path_to_label_file = os.path.join(self.dataset_dir, label_file_name)
             with open(path_to_label_file, newline='') as csv_file:
                 reader = csv.reader(csv_file)
-                for row in reader:
+                for row_index, row in enumerate(reader):
+                    if row_index == 0:
+                        continue
                     dish_id = row[self.id_index]
                     dish = self._parse_row_into_dish(row)
                     dish_mode_value = getattr(dish, self._mode.value)

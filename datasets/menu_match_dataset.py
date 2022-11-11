@@ -6,8 +6,7 @@ from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
 
 class MenuMatchDataset(AbstractDataset):
-
-    dataset_paths_creator = DatasetPathCreator(dataset_dirname='menu_match', label_filename='total_calories.yml')
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='menu_match', label_filename='total_calories.yml')
 
     def __init__(self):
         self._image_calorie_mappings = None

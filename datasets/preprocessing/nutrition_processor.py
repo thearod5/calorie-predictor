@@ -146,9 +146,14 @@ class NutritionProcessor(BaseProcessor):
         dishes = set()
         with open(orig_data_filepath, newline='') as orig_file:
             reader = csv.reader(orig_file)
+            i = 0
             for row in reader:
+                if i == 0:
+                    print(row)
+                    i += 1
                 processed_row = [item for item in row if self.LABEL2REMOVE not in item]
                 processed_rows.append(processed_row)
                 dishes.add(processed_row[NutritionDataset.id_index])
-        pd.DataFrame(processed_rows).to_csv(new_data_filepath)
+        pd.DataFrame(processed_rows).to_csv(new_data_filepath, index=False)
+        print("Exporting:", new_data_filepath)
         return dishes
