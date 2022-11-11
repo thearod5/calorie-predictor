@@ -97,7 +97,9 @@ class NutritionDataset(AbstractDataset):
             path_to_label_file = os.path.join(self.dataset_dir, label_file_name)
             with open(path_to_label_file, newline='') as csv_file:
                 reader = csv.reader(csv_file)
-                for row in reader:
+                for row_index, row in enumerate(reader):
+                    if row_index == 0:
+                        continue
                     dish_id = row[self.id_index]
                     dish = self._parse_row_into_dish(row)
                     dish_mode_value = getattr(dish, self._mode.value)
