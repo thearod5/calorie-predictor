@@ -6,8 +6,8 @@ from typing import *
 
 from tensorflow import Tensor
 
-from datasets.abstract_dataset import AbstractDataset
-from constants import LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES, IMAGE_NAME_SEPARATOR
+from constants import IMAGE_NAME_SEPARATOR, LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES
+from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()
@@ -43,23 +43,14 @@ class NutritionDataset(AbstractDataset):
     mass_index = 2
     num_features = 6
 
-    DIR_NAME = 'nutrition5k'
-    DATA_FILENAMES = ["final_dish_metadata_cafe1.csv", "final_dish_metadata_cafe2.csv"]
+    DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='nutrition5k', label_filename='')
 
     def __init__(self, mode: Mode):
         self._dishes: Dict[str, Dish] = {}
         self._mode = mode
         self._label_files = self.DATA_FILENAMES
-        super().__init__(self.DIR_NAME, "")
-
-    def get_image_paths(self) -> List[str]:
-        """
-        Overrides parent paths to filter out images whose corresponding dishes do not
-        have sufficient or valid data.
-        :return:
-        """
-        return list(filter(lambda p: self._get_image_dish(self.get_name_from_path(p)) is not None,
-                           super().get_image_paths()))
+        super().__init__(self.dataset_paths_creator)
 
     def get_label(self, image_name: str) -> Union[float, Tensor]:
         """
@@ -69,11 +60,20 @@ class NutritionDataset(AbstractDataset):
         """
         dish = self._get_image_dish(image_name)
         if dish is None:
-            raise Exception("No labels found for image:" + image_name)
+            return None
         label = getattr(dish, self._mode.value)
         if self._mode == Mode.INGREDIENTS:
             return self.food2index.to_ingredients_tensor(label)
         return label
+
+    @staticmethod
+    def get_dish_id_from_image_name(image_name: str) -> str:
+        """
+        Removes the camera identifier if in the image name and returns the dish id
+        param image_name: name of the image
+        :return: the dish id
+        """
+        return image_name.split(IMAGE_NAME_SEPARATOR)[0] if IMAGE_NAME_SEPARATOR in image_name else image_name
 
     def _get_image_dish(self, image_name: str) -> Optional[Dish]:
         """
@@ -81,11 +81,10 @@ class NutritionDataset(AbstractDataset):
         :param image_name: name of the image
         :return: the Dish in image
         """
-        if IMAGE_NAME_SEPARATOR in image_name:
-            image_name = image_name.split(IMAGE_NAME_SEPARATOR)[0]  # removes the camera identifier
-        if image_name not in self._dishes:
+        dish_id = self.get_dish_id_from_image_name(image_name)
+        if dish_id not in self._dishes:
             return None
-        return self._dishes[image_name]
+        return self._dishes[dish_id]
 
     def load_data(self) -> None:
         """
@@ -98,14 +97,16 @@ class NutritionDataset(AbstractDataset):
             path_to_label_file = os.path.join(self.dataset_dir, label_file_name)
             with open(path_to_label_file, newline='') as csv_file:
                 reader = csv.reader(csv_file)
-                for row in reader:
+                for row_index, row in enumerate(reader):
+                    if row_index == 0:
+                        continue
                     dish_id = row[self.id_index]
                     dish = self._parse_row_into_dish(row)
                     dish_mode_value = getattr(dish, self._mode.value)
                     if dish_id in processed_ids or not self.is_mode_value_valid(dish_mode_value):
                         if LOG_SKIPPED_ENTRIES:
                             logger.debug(
-                                dish_id + ": was already processed or has invalid value for mode " + self._mode)
+                                dish_id + ": was already processed or has invalid value for mode " + self._mode.value)
                         continue
                     self._dishes[dish_id] = self._parse_row_into_dish(row)
                     processed_ids.append(dish_id)

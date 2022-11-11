@@ -1,9 +1,12 @@
-from datasets.menu_match_dataset import MenuMatchDataset
+import tensorflow as tf
+
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
-from experiment.tasks.base_task import RegressionTask, TaskType
+from datasets.menu_match_dataset import MenuMatchDataset
+from experiment.tasks.regression_base_task import RegressionBaseTask
 
 
-class TestTask(RegressionTask):
+class TestTask(RegressionBaseTask):
+
     def __init__(self, base_model, n_epochs=N_EPOCHS):
         super().__init__(base_model, n_epochs=n_epochs)
         dataset = MenuMatchDataset()
@@ -19,4 +22,8 @@ class TestTask(RegressionTask):
 
     def get_test_data(self):
         # NO TEST DATA
+        return self._validation
+
+    def get_eval_dataset(self, name: str) -> tf.data.Dataset:
+        # NO EVAL DATA
         return self._validation

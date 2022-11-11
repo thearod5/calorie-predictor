@@ -1,18 +1,16 @@
 import pandas as pd
 
-from datasets.abstract_dataset import AbstractDataset
+from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
 
 class UnimibDataset(AbstractDataset):
     ID_COL = "image_name"
     LABEL_COL = "class"
-
-    DIR_NAME = "unimib2016"
-    DATA_FILENAME = "annotations.xlsx"
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name="unimib2016", label_filename="annotations.xlsx")
 
     def __init__(self):
         self._food_info: pd.DataFrame = pd.DataFrame()
-        super().__init__(self.DIR_NAME, self.DATA_FILENAME)
+        super().__init__(self.dataset_paths_creator)
 
     def get_label(self, image_name: str) -> str:
         """

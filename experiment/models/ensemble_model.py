@@ -19,6 +19,10 @@ ENSEMBLE_METHODS = {
 
 class EnsembleModel(tf.keras.Model):
     def __init__(self, n_hidden=N_HIDDEN):
+        """
+        Represents a combination of multiple models
+        :param n_hidden: number of hidden layers to use
+        """
         models = [tf.keras.models.load_model(checkpoint) for checkpoint in checkpoints]
         if len(models) > 1:
             input_layer = Input(shape=INPUT_SHAPE, name="shared_input")
