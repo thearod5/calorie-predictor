@@ -1,26 +1,37 @@
+import tensorflow as tf
+
+from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from datasets.menu_match_dataset import MenuMatchDataset
 from datasets.nutrition_dataset import Mode, NutritionDataset
-from constants import N_EPOCHS, TEST_SPLIT_SIZE
+from experiment.cam.cam_trainer import CamTrainer
+from experiment.models.model_manager import ModelManager
 from experiment.tasks.regression_base_task import RegressionBaseTask
-
-import tensorflow as tf
 
 
 class CaloriePredictionTask(RegressionBaseTask):
 
-    def __init__(self, base_model, n_epochs=N_EPOCHS):
+    def __init__(self, model_manager: ModelManager, log_path: str, n_epochs=N_EPOCHS, use_cam=False):
         """
         Represents a Calorie Prediction Task
-        :param base_model: the model to use for the task
+        :param model_manager: the model to use for the task
         :param n_epochs: the number of epochs to run training for
         """
-        super().__init__(base_model, n_epochs=n_epochs)
+        super().__init__(model_manager, log_path, n_epochs=n_epochs)
         dataset = NutritionDataset(Mode.CALORIE)
         train, validation = dataset.split_to_train_test(TEST_SPLIT_SIZE)
         test_dataset = MenuMatchDataset()
+        self.use_cam = use_cam
+        self.dataset = dataset
         self._train = train
         self._validation = validation
         self._test = test_dataset.split_to_train_test().pop()
+        self.trainer = CamTrainer(model_manager, log_path)
+
+    def train(self):
+        if self.use_cam:
+            self.trainer.train(self.dataset)
+        else:
+            super().train()
 
     def get_training_data(self) -> tf.data.Dataset:
         """

@@ -17,7 +17,7 @@ ENSEMBLE_METHODS = {
 }
 
 
-class EnsembleModel(tf.keras.Model):
+class EnsembleModelManager(tf.keras.Model):
     def __init__(self, n_hidden=N_HIDDEN):
         """
         Represents a combination of multiple models

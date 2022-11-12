@@ -2,13 +2,14 @@ import tensorflow as tf
 
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from datasets.menu_match_dataset import MenuMatchDataset
+from experiment.models.model_manager import ModelManager
 from experiment.tasks.regression_base_task import RegressionBaseTask
 
 
 class TestTask(RegressionBaseTask):
 
-    def __init__(self, base_model, n_epochs=N_EPOCHS):
-        super().__init__(base_model, n_epochs=n_epochs)
+    def __init__(self, model_manager: ModelManager, log_path: str, n_epochs=N_EPOCHS):
+        super().__init__(model_manager, log_path, n_epochs=n_epochs)
         dataset = MenuMatchDataset()
         train, validation = dataset.split_to_train_test(TEST_SPLIT_SIZE)
         self._train = train

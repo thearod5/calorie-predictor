@@ -1,14 +1,16 @@
+import tensorflow as tf
+
+from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from datasets.eucstfd_dataset import EucstfdDataset
 from datasets.nutrition_dataset import Mode, NutritionDataset
-from constants import N_EPOCHS, TEST_SPLIT_SIZE
+from experiment.models.model_manager import ModelManager
 from experiment.tasks.regression_base_task import RegressionBaseTask
-import tensorflow as tf
 
 
 class MassPredictionTask(RegressionBaseTask):
 
-    def __init__(self, base_model, n_epochs=N_EPOCHS):
-        super().__init__(base_model, n_epochs=n_epochs)
+    def __init__(self, model_manager: ModelManager, log_dir: str, n_epochs=N_EPOCHS):
+        super().__init__(model_manager, log_dir, n_epochs=n_epochs)
         dataset = NutritionDataset(Mode.MASS)
         test_dataset = EucstfdDataset()
         train, validation = dataset.split_to_train_test(TEST_SPLIT_SIZE)

@@ -1,18 +1,18 @@
 from enum import Enum
 
-from experiment.models.ensemble_model import EnsembleModel
-from experiment.models.resnet_model import ResNetModel
-from experiment.models.test_model import TestModel
-from experiment.models.vgg_model import VGGModel
-from experiment.models.xception_model import XceptionModel
+from experiment.models.ensemble_model import EnsembleModelManager
+from experiment.models.resnet_model import ResNetModelManager
+from experiment.models.test_model import TestModelManager
+from experiment.models.vgg_model import VGGModelManager
+from experiment.models.xception_model import XceptionModelManager
 
 
-class BaseModel(Enum):
-    VGG = VGGModel
-    RESNET = ResNetModel
-    XCEPTION = XceptionModel
-    TEST = TestModel
-    ENSEMBLE = EnsembleModel
+class ModelManagers(Enum):
+    VGG = VGGModelManager
+    RESNET = ResNetModelManager
+    XCEPTION = XceptionModelManager
+    TEST = TestModelManager
+    ENSEMBLE = EnsembleModelManager
 
 
-PRE_TRAINED_MODELS = [BaseModel.VGG, BaseModel.RESNET, BaseModel.XCEPTION]
+PRE_TRAINED_MODELS = [ModelManagers.VGG, ModelManagers.RESNET, ModelManagers.XCEPTION]

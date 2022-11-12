@@ -9,7 +9,7 @@ N_FEATURES = 32
 KERNEL_SIZE = (3, 3)
 
 
-class TestModel(models.Sequential):
+class TestModelManager(models.Sequential):
 
     def __init__(self):
         super().__init__()

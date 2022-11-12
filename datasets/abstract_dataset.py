@@ -71,7 +71,8 @@ class AbstractDataset:
         self.dataset_dir = dataset_path_creator.dataset_dir
         self.label_file = dataset_path_creator.label_file
         self.image_dir = dataset_path_creator.image_dir
-        self.image_paths = self.get_image_paths(self.image_dir)
+        image_paths = self.get_image_paths(self.image_dir)
+        self.image_paths = self._remove_unlabeled_images(image_paths)
         self._images = None
         self.food2index = Food2Index()
         self.load_data()
@@ -102,15 +103,6 @@ class AbstractDataset:
         return [os.path.join(image_dir, filename) for filename in
                 os.listdir(image_dir) if
                 filename[0] != "." and filename != ""]  # ignore system files
-
-    def _remove_unlabeled_images(self):
-        labeled_image_paths = []
-        for image_path in self.image_paths:
-            image_name = self.get_name_from_path(image_path)
-            label = self.get_label(image_name)
-            if label is not None:
-                labeled_image_paths.append(image_path)
-        self.image_paths = labeled_image_paths
 
     def get_image_names(self) -> List[str]:
         """
@@ -160,7 +152,6 @@ class AbstractDataset:
        :param shuffle: shuffles data if True
        :return: the dataset
        """
-        self._remove_unlabeled_images()
         image_count = len(self.image_paths)
         ds = tf.data.Dataset.zip((self.get_images(), self.get_labels()))
         if shuffle:
@@ -216,3 +207,16 @@ class AbstractDataset:
         ds = dataset.batch(BATCH_SIZE)
         ds = ds.prefetch(buffer_size=AUTOTUNE)
         return ds
+
+    def _remove_unlabeled_images(self, image_paths: List[str]):
+        """
+        Removes image paths whose label is undefined for task.
+        :return: None. image_paths is modified directly.
+        """
+        labeled_image_paths = []
+        for image_path in image_paths:
+            image_name = self.get_name_from_path(image_path)
+            label = self.get_label(image_name)
+            if label is not None:
+                labeled_image_paths.append(image_path)
+        return labeled_image_paths

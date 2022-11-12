@@ -1,5 +1,5 @@
 import logging.config
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Tuple
 
@@ -7,7 +7,6 @@ import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Dense, Dropout, GlobalAveragePooling2D
 from keras.losses import mean_absolute_error
 from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.python.data import Dataset
@@ -15,7 +14,8 @@ from tensorflow.python.data import Dataset
 from datasets.abstract_dataset import AbstractDataset
 from experiment.Food2Index import Food2Index
 from experiment.models.checkpoint_creator import get_checkpoint_path
-from experiment.models.model_identifiers import BaseModel, PRE_TRAINED_MODELS
+from experiment.models.model_identifiers import PRE_TRAINED_MODELS
+from experiment.models.model_manager import ModelManager
 from logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
@@ -53,12 +53,13 @@ augmentation_generator = ImageDataGenerator(rotation_range=15,
                                             brightness_range=[0.5, 1.5])
 
 
-class BaseTask:
-    def __init__(self, base_model: BaseModel, n_outputs: int = 1, n_epochs: int = N_EPOCHS, load_weights: bool = True,
+class AbstractTask(ABC):
+    def __init__(self, model_manager: ModelManager, log_path: str, n_outputs: int = 1, n_epochs: int = N_EPOCHS,
+                 load_weights: bool = True,
                  load_on_init: bool = True):
         """
         Represents a task for the model
-        :param base_model: the model to use for the task
+        :param model_manager: the model to use for the task
         :param n_outputs: the number of nodes for the output layer
         :param n_epochs: the number of epochs to run training for
         :param load_weights: if True, loads existing weights
@@ -67,14 +68,15 @@ class BaseTask:
         section_heading = "Run Settings"
         logger.info(format_header(section_heading))
         logger.info("Task: " + self.__class__.__name__)
-        self.base_model = base_model
+        self.base_model = model_manager.base_model
         self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
-        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, base_model.name.lower())
-        self.model = self.make_model(base_model,
-                                     n_outputs,
-                                     base_model in PRE_TRAINED_MODELS)
+        self.log_path = log_path
+        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, model_manager.base_model.name.lower())
+        self.model_manager = model_manager
+        self.model = model_manager.create_model(self, n_outputs=n_outputs,
+                                                pre_trained_model=model_manager in PRE_TRAINED_MODELS)
         if load_on_init:
             self.load_model()
         logger.info(get_section_break(section_heading))
@@ -157,44 +159,6 @@ class BaseTask:
         """
         pass
 
-    def make_model(self, base_model: BaseModel, n_outputs: int, pre_trained_model=True) -> tf.keras.Model:
-        """
-         Makes the task's model
-         :param base_model: the model to use for the task
-         :param n_outputs: the number of nodes for the output layer
-         :param pre_trained_model: if True, assumes base_model is a pre_trained_model
-         :return the model
-         """
-        base_model_class = base_model.value
-        task_name = self.__class__.__name__
-        if pre_trained_model:
-            inputs = tf.keras.Input(shape=INPUT_SHAPE)
-            base_model_obj = base_model_class(
-                pooling='avg',
-                include_top=False,
-                input_shape=INPUT_SHAPE,
-                weights="imagenet",
-                input_tensor=inputs
-            )
-            for layer in base_model_obj.layers:
-                layer._name = "_".join([layer.name, base_model.name, task_name])
-        else:
-            base_model_obj = base_model_class()
-        output_layer_name = "_".join(["output", base_model.name, task_name])
-        model_name = "_".join([base_model.name, task_name])
-        activation_function = None
-        x = base_model_obj.output
-        if self.task_mode == TaskType.CLASSIFICATION:
-            activation_function = "softmax"
-            x = GlobalAveragePooling2D()(x)
-            x = Dense(2048, activation='relu')(x)
-            x = Dropout(0.5)(x)
-        output_layer = tf.keras.layers.Dense(n_outputs,
-                                             name=output_layer_name,
-                                             activation=activation_function)(x)
-        model = tf.keras.Model(inputs=base_model_obj.input, outputs=output_layer, name=model_name)
-        return model
-
     def load_model(self):
         """
         Handles loading the model weights and/or compiling
@@ -271,9 +235,9 @@ class BaseTask:
         :param child_key: if provided, increments the value inside of the child_key which is in the dictionary mapped to the key
         :return: None
         """
-        dict_ = BaseTask.initialize_dict_entry(dict_, key, init_val={} if child_key else 0)
+        dict_ = AbstractTask.initialize_dict_entry(dict_, key, init_val={} if child_key else 0)
         if child_key:
-            dict_ = BaseTask.initialize_dict_entry(dict_[key], child_key)
+            dict_ = AbstractTask.initialize_dict_entry(dict_[key], child_key)
         dict_[key] += 1
 
     @staticmethod

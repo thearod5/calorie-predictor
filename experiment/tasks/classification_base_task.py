@@ -1,31 +1,33 @@
 from abc import ABC
 
-from constants import N_EPOCHS
-from experiment.Food2Index import Food2Index
-from experiment.models.model_identifiers import BaseModel
-from experiment.tasks.base_task import BaseTask, TaskType, logger
-from logging_utils.utils import format_header, format_eval_results
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import confusion_matrix
 
+from constants import N_EPOCHS
+from experiment.Food2Index import Food2Index
+from experiment.models.model_manager import ModelManager
+from experiment.tasks.base_task import AbstractTask, TaskType, logger
+from logging_utils.utils import format_eval_results, format_header
 
-class ClassificationBaseTask(BaseTask, ABC):
+
+class ClassificationBaseTask(AbstractTask, ABC):
     task_type = TaskType.CLASSIFICATION
     loss_function = tf.keras.losses.CategoricalCrossentropy()
     metric = "accuracy"
     task_mode = "max"
 
-    def __init__(self, base_model: BaseModel, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True, load_on_init=True):
+    def __init__(self, model_manager: ModelManager, log_path: str, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
+                 load_on_init=True):
         """
         Represents a Classification Task
-        :param base_model: the model to use for the task
+        :param model_manager: the model to use for the task
         :param n_outputs: the number of nodes for the output layer
         :param n_epochs: the number of epochs to run training for
         :param load_weights: if True, loads existing weights
         :param load_on_init: if True, loads the model in task __init__
         """
-        super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
+        super().__init__(model_manager, log_path, n_outputs, n_epochs, load_weights, load_on_init)
 
     def eval(self, dataset_name: str = None):
         """
