@@ -6,7 +6,7 @@ from tensorflow.keras.metrics import mean_absolute_error
 
 from constants import N_EPOCHS
 from experiment.models.model_manager import ModelManager
-from experiment.tasks.base_task import AbstractTask, TaskType, logger
+from experiment.tasks.task_type import TaskType
 from logging_utils.utils import format_name_val_info
 
 

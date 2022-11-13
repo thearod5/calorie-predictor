@@ -7,7 +7,7 @@ from sklearn.metrics import confusion_matrix
 from constants import N_EPOCHS
 from experiment.Food2Index import Food2Index
 from experiment.models.model_manager import ModelManager
-from experiment.tasks.base_task import AbstractTask, TaskType, logger
+from experiment.tasks.task_type import TaskType
 from logging_utils.utils import format_eval_results, format_header
 
 

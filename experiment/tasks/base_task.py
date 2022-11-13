@@ -1,6 +1,5 @@
 import logging.config
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any, Dict, List, Tuple
 
 import keras
@@ -14,22 +13,14 @@ from tensorflow.python.data import Dataset
 from datasets.abstract_dataset import AbstractDataset
 from experiment.Food2Index import Food2Index
 from experiment.models.checkpoint_creator import get_checkpoint_path
-from experiment.models.model_identifiers import PRE_TRAINED_MODELS
-from experiment.models.model_manager import ModelManager
+from experiment.models.managers.model_manager import ModelManager
+from experiment.models.managers.model_managers import PRE_TRAINED_MODELS
+from experiment.tasks.task_mode import TaskMode
+from experiment.tasks.task_type import TaskType
 from logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()
-
-
-class TaskMode(Enum):
-    TRAIN = "TRAIN"
-    EVAL = "EVAL"
-
-
-class TaskType(Enum):
-    REGRESSION = "REGRESSION"
-    CLASSIFICATION = "CLASSIFICATION"
 
 
 def sample_data(data: Dataset):
@@ -54,7 +45,7 @@ augmentation_generator = ImageDataGenerator(rotation_range=15,
 
 
 class AbstractTask(ABC):
-    def __init__(self, model_manager: ModelManager, log_path: str, n_outputs: int = 1, n_epochs: int = N_EPOCHS,
+    def __init__(self, model_manager: ModelManager, n_outputs: int = 1, n_epochs: int = N_EPOCHS,
                  load_weights: bool = True,
                  load_on_init: bool = True):
         """
@@ -66,17 +57,18 @@ class AbstractTask(ABC):
         :param load_on_init: if True, loads the model in task __init__
         """
         section_heading = "Run Settings"
+        task_name = self.__class__.__name__
         logger.info(format_header(section_heading))
-        logger.info("Task: " + self.__class__.__name__)
-        self.base_model = model_manager.base_model
+        logger.info("Task: " + task_name)
+
         self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
-        self.log_path = log_path
-        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, model_manager.base_model.name.lower())
+
         self.model_manager = model_manager
-        self.model = model_manager.create_model(self, n_outputs=n_outputs,
+        self.model = model_manager.create_model((self.task_mode, task_name), n_outputs=n_outputs,
                                                 pre_trained_model=model_manager in PRE_TRAINED_MODELS)
+        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, self.model_manager.model_name.lower())
         if load_on_init:
             self.load_model()
         logger.info(get_section_break(section_heading))
@@ -170,7 +162,7 @@ class AbstractTask(ABC):
         else:
             self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
             weights = "Random"
-        logger.info(format_name_val_info("Model", self.base_model.name))
+        logger.info(format_name_val_info("Model", self.model_manager.model_name))
         logger.info(format_name_val_info("Weights", weights))
 
     def train(self):
@@ -248,10 +240,10 @@ class AbstractTask(ABC):
         :return: the new combined dataset and the total image count after combining
         """
         dataset = datasets[0].get_dataset(shuffle=False)
-        image_count = len(datasets[0].get_image_paths())
+        image_count = len(datasets[0].get_image_paths(datasets[0].image_dir))
         for d in datasets[1:]:
             dataset = dataset.concatenate(d.get_dataset(shuffle=False))
-            image_count += len(d.get_image_paths())
+            image_count += len(d.get_image_paths(d.image_dir))
         return dataset, image_count
 
     @staticmethod
