@@ -9,7 +9,7 @@ from datasets.food_images_dataset import FoodImagesDataset
 from datasets.nutrition_dataset import Mode, NutritionDataset
 from datasets.unimib_dataset import UnimibDataset
 from experiment.Food2Index import Food2Index
-from experiment.models.model_manager import ModelManager
+from experiment.models.managers.model_manager import ModelManager
 from experiment.tasks.classification_base_task import ClassificationBaseTask
 
 
@@ -20,7 +20,7 @@ class FoodClassificationTask(ClassificationBaseTask):
         "nutrition5k": lambda: NutritionDataset(mode=Mode.INGREDIENTS)
     }
 
-    def __init__(self, model_manager: ModelManager, log_path: str, n_epochs=N_EPOCHS,
+    def __init__(self, model_manager: ModelManager, n_epochs=N_EPOCHS,
                  training_datasets: [str] = CLASSIFICATION_DATASETS):
         """
          Represents the Food Classification Task
@@ -28,7 +28,7 @@ class FoodClassificationTask(ClassificationBaseTask):
          :param n_epochs: the number of epochs to run training for
          :param training_datasets: datasets to use for training
          """
-        super().__init__(model_manager, log_path, n_outputs=len(Food2Index()), n_epochs=n_epochs)
+        super().__init__(model_manager, n_outputs=len(Food2Index()), n_epochs=n_epochs)
         datasets = self.get_datasets(training_datasets)
         dataset, image_count = self.combine_datasets(datasets)
         d_splits = list(

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Tuple
 
 import tensorflow as tf
 from keras import Model
@@ -7,12 +7,13 @@ from keras.layers import Dense, Dropout, GlobalAveragePooling2D
 from tensorflow.python.layers.base import Layer
 
 from constants import INPUT_SHAPE
-from experiment.tasks.base_task import AbstractTask, TaskType
+from experiment.tasks.task_mode import TaskMode
+from experiment.tasks.task_type import TaskType
 
 
 class ModelManager(ABC):
     def __init__(self):
-        self.model = None
+        self.__model = None
         self.activation = {}
         self.model_name = self.get_model_constructor().__class__.__name__
 
@@ -24,11 +25,11 @@ class ModelManager(ABC):
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def get_feature_layer(self, model: Model) -> Layer:
+    def _get_feature_layer(model: Model) -> Layer:
         """
-        Returns the feature layer of the model architecture.
-        :param model: The model whose feature layer is returned.
+        Returns the feature layer of the model.
         :return: The feature layer.
         """
         pass
@@ -41,6 +42,11 @@ class ModelManager(ABC):
         """
         pass
 
+    def get_model(self) -> Model:
+        if self.__model is None:
+            raise Exception("Model has not been constructed.")
+        return self.__model
+
     def get_features(self):
         """
         Returns the features associated with the last run on the model
@@ -48,12 +54,12 @@ class ModelManager(ABC):
         """
         return self.activation["features"]
 
-    def create_model(self, task: AbstractTask, n_outputs: int, pre_trained_model=True) -> Model:
+    def create_model(self, task: Tuple[TaskMode, str], n_outputs: int, pre_trained_model=True) -> Model:
         """
         Creates a Keras model.
         :return: The Keras model.
         """
-        if self.model is None:
+        if self.__model is None:
             task_name = self.__class__.__name__
 
             # 1. Create model
@@ -63,15 +69,15 @@ class ModelManager(ABC):
             model = tf.keras.Model(inputs=base_model.input, outputs=output_layer, name=model_name)
 
             # 2. Register feature hook
-            feature_layer = self.get_feature_layer(model)
-            feature_layer.register_forward_hook(self.__create_feature_hook("features"))
+            # feature_layer = self._get_feature_layer(model)
+            # feature_layer.register_forward_hook(self.__create_feature_hook("features"))
 
             # Given layers readable names
             for layer in base_model.layers:
                 layer._name = "_".join([layer.name, self.model_name, task_name])
 
-            self.model = model
-        return self.model
+            self.__model = model
+        return self.__model
 
     @staticmethod
     def append_dense_layer(base_model, hidden_size: int = 2048, activation: str = "relu",
@@ -126,7 +132,8 @@ class ModelManager(ABC):
             base_model_obj = base_model_class()
         return base_model_obj
 
-    def __add_output_head(self, base_model: Model, task: AbstractTask, n_outputs: int, output_activation="softmax"):
+    def __add_output_head(self, base_model: Model, task: Tuple[TaskMode, str], n_outputs: int,
+                          output_activation="softmax"):
         """
         Adds task-specific set of layers to base model.
         TODO: Infer n_outputs by task
@@ -136,9 +143,9 @@ class ModelManager(ABC):
         :param output_activation: The activation function to use on the last layer.
         :return:
         """
-        output_layer_name = "_".join(["output", self.model_name, task.__class__.__name__])
+        output_layer_name = "_".join(["output", self.model_name, task[1]])
         output_layer = base_model.output
-        if task.task_mode == TaskType.CLASSIFICATION:
+        if task[0] == TaskType.CLASSIFICATION:
             output_layer = self.append_dense_layer(base_model)
         return tf.keras.layers.Dense(n_outputs,
                                      name=output_layer_name,

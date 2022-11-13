@@ -4,7 +4,8 @@ from typing import Dict, List, Optional, Tuple
 
 from keras_preprocessing.image import save_img
 
-from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
+from datasets.abstract_dataset import AbstractDataset
+from datasets.dataset_path_creator import DatasetPathCreator
 
 ImageLabel = Dict[str, str]
 ProcessingPath = Tuple[str, str]  # Represents the input path to an image and the output path after resizing

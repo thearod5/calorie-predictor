@@ -10,8 +10,8 @@ from experiment.tasks.calories_task import CaloriePredictionTask
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.append(path_to_src)
 
-from constants import N_EPOCHS
-from experiment.models.model_identifiers import ModelManagers
+from constants import N_EPOCHS, get_data_dir
+from experiment.models.managers.model_managers import ModelManagers
 from experiment.tasks.base_task import logger, set_data, AbstractTask
 from experiment.tasks.task_identifiers import Tasks
 
@@ -45,13 +45,18 @@ if __name__ == "__main__":
     mode = args.mode
     use_cam = args.cam
 
+    print("-" * 25)
+    print(args)
+
     # 2. Extract task and model
     set_data(data_env)
+    data_dir = get_data_dir()
     task_selected: Tasks = name2enum(task_name, Tasks)
-    model_selected: ModelManagers = name2enum(model_manager_name, ModelManagers)
+    model_manager_class: ModelManagers = name2enum(model_manager_name, ModelManagers)
 
     # 3. Create task resources and train.
-    task: AbstractTask = task_selected.value(model_selected, n_epochs=N_EPOCHS)
+    model_manager = model_manager_class.value()
+    task: AbstractTask = task_selected.value(model_manager, n_epochs=N_EPOCHS)
     logger.info("Data Env: %s" % data_env)
     if mode == "train":
         if use_cam and isinstance(task, CaloriePredictionTask):

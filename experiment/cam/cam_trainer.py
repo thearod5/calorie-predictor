@@ -8,14 +8,14 @@ from tqdm import tqdm
 from constants import PATH_TO_OUTPUT_DIR
 from datasets.abstract_dataset import AbstractDataset
 from experiment.cam.cam_dataset_converter import CamDatasetConverter
-from experiment.models.model_manager import ModelManager
+from experiment.models.managers.model_manager import ModelManager
 
 
 class CamTrainer:
-    def __init__(self, model_manager: ModelManager, log_path: str):
+    def __init__(self, model_manager: ModelManager):
         self.model_manager = model_manager
-        self.log_path = log_path
-        self.model = model_manager.model
+        self.model = model_manager.get_model()
+        self.log_path = os.path.join(PATH_TO_OUTPUT_DIR, "logs")
         self.base_cam_path = os.path.join(PATH_TO_OUTPUT_DIR, "cam")
 
     def train(self, training_data: AbstractDataset, n_epochs=3, alpha=1, lr=0.005, weight_decay=1e-6, momentum=0.9):
@@ -48,7 +48,7 @@ class CamTrainer:
                 class_loss = criterion(outputs, cls)
             # Running model over data
             if alpha != 1:
-                features = self.model_manager.get_features()
+                features = self.model_manager._get_feature_layer(self.model).output
                 params = self.model_manager.get_parameters()
 
                 bz, nc, h, w = features.shape
@@ -86,7 +86,9 @@ class CamTrainer:
             'state_dict': self.model.state_dict(),
             'optimizer': solver.state_dict(),
         }
-        with open(os.path.join(self.log_path, 'model_log.json'), 'w') as out:
+        log_index = len(os.listdir(self.log_path))
+        log_file_name = "model_log_%s.json" % (log_index)
+        with open(os.path.join(self.log_path, log_file_name), 'w') as out:
             json.dump(log, out)
         torch.save(states, os.path.join(self.log_path, 'current_model.pth'))
 
