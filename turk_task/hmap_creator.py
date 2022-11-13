@@ -1,14 +1,20 @@
 import json
 import os
-from typing import List, Dict
+from typing import Dict, List
 from urllib.request import urlopen
 
-from constants import DEFAULT_TURK_RESULTS, CAM_PATH
+import cv2
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from constants import CAM_PATH, DEFAULT_TURK_RESULTS
 from datasets.abstract_dataset import AbstractDataset
 
 
 class HMapCreator:
-    def __init__(self, dataset: AbstractDataset, result_file_names: List[str], results_path: str = DEFAULT_TURK_RESULTS):
+    def __init__(self, dataset: AbstractDataset, result_file_names: List[str],
+                 results_path: str = DEFAULT_TURK_RESULTS):
         """
         Creates heat maps from the bounding boxes defined by runs of the turk task.
         :param dataset: The dataset whose bounding boxes are read.
