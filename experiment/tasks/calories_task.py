@@ -17,9 +17,9 @@ class CaloriePredictionTask(RegressionBaseTask):
         :param n_epochs: the number of epochs to run training for
         """
         super().__init__(model_manager, n_epochs=n_epochs, load_weights=False)
-        dataset = NutritionDataset(Mode.CALORIE)
+        dataset = MenuMatchDataset()
         train, validation = dataset.split_to_train_test(TEST_SPLIT_SIZE)
-        test_dataset = MenuMatchDataset()
+        test_dataset = NutritionDataset(Mode.CALORIE)
         self.use_cam = use_cam
         self.dataset = dataset
         self._train = train
