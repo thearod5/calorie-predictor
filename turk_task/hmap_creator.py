@@ -36,7 +36,7 @@ class HMapCreator:
         for batch_index, result_file_name in enumerate(self.result_file_names):
             batch_id = batch_index + 1
             print("Starting batch: %d / %d" % (batch_id, self.n_batches))
-            self.save_hmap_batch(result_file_name, batch_id, export_dir)
+            self._save_hmap_batch(result_file_name, batch_id, export_dir)
 
     def save_avg_hmaps(self):
         """
@@ -45,34 +45,9 @@ class HMapCreator:
         """
         dataset_path = os.path.join(CAM_PATH, self.dataset.dataset_path_creator.name)
         for image_name in self.dataset.get_image_names(with_extension=True):
-            HMapCreator.save_avg_hmap_for_image(dataset_path, image_name)
+            HMapCreator._save_avg_hmap_for_image(dataset_path, image_name)
 
-    @staticmethod
-    def create_hmap_for_image(bounding_box_item: Dict, batch_id_path: str) -> None:
-        """
-        box coordinates returned from your model's predictions
-        color is the color of the bounding box you would like & 2 is the thickness of the bounding box
-        :param bounding_box_item: The turk entry containing bounding box
-        :param batch_id_path: Path to the directory of the batch being processed
-        :return:
-        """
-        result_image_url = bounding_box_item["Input.image_url"]
-        bounding_boxes = json.loads(bounding_box_item["Answer.annotatedResult.boundingBoxes"])
-        if len(bounding_boxes) == 0:
-            print("Missing bounding box: " + bounding_box_item["HITId"])
-            return
-        result_image_box = bounding_boxes[0]
-        input_image = HMapCreator.read_image(result_image_url)
-
-        (start_x, start_y, end_x, end_y) = HMapCreator.get_image_coordinates(result_image_box)
-        hmap = np.zeros(shape=input_image.shape)
-        hmap[start_y: end_y, start_x: end_x] = 1
-
-        file_name = result_image_url.split("/")[-1]
-        export_path = os.path.join(batch_id_path, file_name)
-        cv2.imwrite(export_path, hmap)
-
-    def save_hmap_batch(self, result_file_name: str, batch_id: int, batch_id_path: str) -> None:
+    def _save_hmap_batch(self, result_file_name: str, batch_id: int, batch_id_path: str) -> None:
         """
         Reads file containing bounding boxes and saves them as heat maps.
         :param result_file_name: The name of the
@@ -86,11 +61,37 @@ class HMapCreator:
         if not os.path.exists(batch_id_path):
             os.makedirs(batch_id_path)
         for i in tqdm(range(len(results_df))):
-            HMapCreator.create_hmap_for_image(results_df.iloc[i], batch_id_path)
+            HMapCreator._create_hmap_for_image(results_df.iloc[i], batch_id_path)
         print("Done!")
 
     @staticmethod
-    def save_avg_hmap_for_image(dataset_path: str, image_file_name: str) -> None:
+    def _create_hmap_for_image(bounding_box_item: Dict, batch_id_path: str) -> None:
+        """
+        box coordinates returned from your model's predictions
+        color is the color of the bounding box you would like & 2 is the thickness of the bounding box
+        :param bounding_box_item: The turk entry containing bounding box
+        :param batch_id_path: Path to the directory of the batch being processed
+        :return:
+        """
+        result_image_url = bounding_box_item["Input.image_url"]
+        bounding_boxes = json.loads(bounding_box_item["Answer.annotatedResult.boundingBoxes"])
+        if len(bounding_boxes) == 0:
+            print("Missing bounding box: " + bounding_box_item["HITId"])
+            return
+        result_image_box = bounding_boxes[0]
+        input_image = HMapCreator._read_image(result_image_url)
+
+        (start_x, start_y, end_x, end_y) = HMapCreator._get_image_coordinates(result_image_box)
+        hmap = np.zeros(shape=input_image.shape)
+        hmap[start_y: end_y, start_x: end_x] = 1
+        hmap = (hmap * 255).astype(np.uint8)
+
+        file_name = result_image_url.split("/")[-1]
+        export_path = os.path.join(batch_id_path, file_name)
+        cv2.imwrite(export_path, hmap)
+
+    @staticmethod
+    def _save_avg_hmap_for_image(dataset_path: str, image_file_name: str) -> None:
         """
         Averages hmaps for image and saves to dataset path.
         :param dataset_path: The path to the dataset within cam folder.
@@ -118,7 +119,7 @@ class HMapCreator:
             cv2.imwrite(export_path, avg_hmap)
 
     @staticmethod
-    def read_image(image_url: str):
+    def _read_image(image_url: str):
         """
         Downloads and reads image from url.
         :param image_url: The url to the image to read
@@ -129,7 +130,7 @@ class HMapCreator:
         return cv2.imdecode(arr, -1)  # 'Load it as it is'
 
     @staticmethod
-    def get_image_coordinates(image_box: dict):
+    def _get_image_coordinates(image_box: dict):
         """
         Extracts the coordinates of the bounding box.
         :param image_box: Dictionary representing bounding box entry from turk task.
