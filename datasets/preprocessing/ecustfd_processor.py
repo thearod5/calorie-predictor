@@ -1,4 +1,3 @@
-
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 from datasets.eucstfd_dataset import EucstfdDataset
 
@@ -9,7 +8,7 @@ class EcustfdProcessor(BaseProcessor):
         """
         Handles processing for the eucstfd dataset
         """
-        super().__init__(EucstfdDataset.dataset_paths_creator, "JPEGImages")
+        super().__init__(EucstfdDataset.DATASET_PATH_CREATOR, "JPEGImages")
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
         """

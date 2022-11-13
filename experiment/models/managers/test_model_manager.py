@@ -24,7 +24,7 @@ class TestModelManager(ModelManager):
         return lambda: model
 
     @staticmethod
-    def _get_feature_layer(model: Model) -> Layer:
+    def get_feature_layer(model: Model) -> Layer:
         return model.layers[1].conv
 
     def get_parameters(self):

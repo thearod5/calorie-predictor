@@ -34,7 +34,7 @@ class NutritionSubProcessor(BaseProcessor, ABC):
         """
         dish_name = os.path.split(entry_name)[-1]
         new_image_name = IMAGE_NAME_SEPARATOR.join([dish_name, output_image_suffix + ".jpg"])
-        output_image_path = os.path.join(NutritionDataset.dataset_paths_creator.image_dir, new_image_name)
+        output_image_path = os.path.join(NutritionDataset.DATASET_PATH_CREATOR.image_dir, new_image_name)
         input_image_path = os.path.join(entry_name, input_image_name)
         return input_image_path, output_image_path
 
@@ -102,7 +102,7 @@ class NutritionProcessor(BaseProcessor):
 
     def __init__(self):
         self.dishes = set()
-        super().__init__(NutritionDataset.dataset_paths_creator, "imagery")
+        super().__init__(NutritionDataset.DATASET_PATH_CREATOR, "imagery")
         self.dataset_path_creator.source_dir = self.input_image_dir
 
     def pre_process(self, settings: ProcessingSettings):

@@ -7,7 +7,7 @@ from datasets.unimib_dataset import UnimibDataset
 class UnimibProcessor(BaseProcessor):
 
     def __init__(self):
-        super().__init__(UnimibDataset.dataset_paths_creator, "UNIMIB2016-images")
+        super().__init__(UnimibDataset.DATASET_PATH_CREATOR, "UNIMIB2016-images")
 
     def create_output_paths(self, entry_name: str) -> ProcessingPaths:
         """

@@ -12,6 +12,7 @@ class DatasetPathCreator:
         :param label_filename: name of the file containing all image labels
         :param data_dir: name of directory containing the data
         """
+        self.name = dataset_dir_name
         self.dataset_dir = self._create_dataset_dir_path(dataset_dir_name)
         self.label_file = self._create_label_file_path(self.dataset_dir, label_filename)
         self.image_dir = self._create_image_dir_path(self.dataset_dir)

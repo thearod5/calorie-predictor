@@ -11,7 +11,7 @@ class XceptionModelManager(ModelManager):
         return FunctionalModelWrapper(Xception)
 
     @staticmethod
-    def _get_feature_layer(model: Model) -> Layer:
+    def get_feature_layer(model: Model) -> Layer:
         return model.layers.conv4
 
     def get_parameters(self):

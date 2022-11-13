@@ -12,7 +12,7 @@ class ResNetModelManager(ModelManager):
         return FunctionalModelWrapper(ResNet50)
 
     @staticmethod
-    def _get_feature_layer(model: Model) -> Layer:
+    def get_feature_layer(model: Model) -> Layer:
         return model.get_layer("conv3_block4_3_conv")
 
     def get_parameters(self):

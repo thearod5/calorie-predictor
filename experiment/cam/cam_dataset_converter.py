@@ -2,7 +2,8 @@ import os
 
 import tensorflow as tf
 import torch
-from PIL.Image import Image
+from PIL import Image
+
 from tensorflow.keras.layers import Reshape
 
 from datasets.abstract_dataset import AbstractDataset

@@ -14,7 +14,7 @@ class FoodImageProcessor(BaseProcessor):
         """
         Handles processing for the food image dataset
         """
-        super().__init__(FoodImagesDataset.dataset_paths_creator, IMAGE_DIR)
+        super().__init__(FoodImagesDataset.DATASET_PATH_CREATOR, IMAGE_DIR)
 
     def create_output_paths(self, path_to_food_category: str) -> ProcessingPaths:
         """

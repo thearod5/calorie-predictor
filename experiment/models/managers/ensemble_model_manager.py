@@ -44,7 +44,7 @@ class EnsembleModelManager(ModelManager):
         return lambda: model
 
     @staticmethod
-    def _get_feature_layer(model: Model) -> Layer:
+    def get_feature_layer(model: Model) -> Layer:
         raise NotImplementedError()
 
     def get_parameters(self):

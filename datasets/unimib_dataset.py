@@ -7,11 +7,11 @@ from datasets.dataset_path_creator import DatasetPathCreator
 class UnimibDataset(AbstractDataset):
     ID_COL = "image_name"
     LABEL_COL = "class"
-    dataset_paths_creator = DatasetPathCreator(dataset_dir_name="unimib2016", label_filename="annotations.xlsx")
+    DATASET_PATH_CREATOR = DatasetPathCreator(dataset_dir_name="unimib2016", label_filename="annotations.xlsx")
 
     def __init__(self):
         self._food_info: pd.DataFrame = pd.DataFrame()
-        super().__init__(self.dataset_paths_creator)
+        super().__init__(self.DATASET_PATH_CREATOR)
 
     def get_label(self, image_name: str) -> str:
         """

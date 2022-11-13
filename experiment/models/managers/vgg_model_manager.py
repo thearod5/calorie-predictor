@@ -11,7 +11,7 @@ class VGGModelManager(ModelManager):
         return FunctionalModelWrapper(VGG19)
 
     @staticmethod
-    def _get_feature_layer(model: Model) -> Layer:
+    def get_feature_layer(model: Model) -> Layer:
         return model.layers[-1]
 
     def get_parameters(self):

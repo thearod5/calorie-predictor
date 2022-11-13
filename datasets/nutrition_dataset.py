@@ -45,13 +45,13 @@ class NutritionDataset(AbstractDataset):
     num_features = 6
 
     DATA_FILENAMES = ["dish_metadata_cafe1.csv", "dish_metadata_cafe2.csv"]
-    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='nutrition5k', label_filename='')
+    DATASET_PATH_CREATOR = DatasetPathCreator(dataset_dir_name='nutrition5k', label_filename='')
 
     def __init__(self, mode: Mode):
         self._dishes: Dict[str, Dish] = {}
         self._mode = mode
         self._label_files = self.DATA_FILENAMES
-        super().__init__(self.dataset_paths_creator)
+        super().__init__(self.DATASET_PATH_CREATOR)
 
     def get_label(self, image_name: str) -> Union[float, Tensor]:
         """

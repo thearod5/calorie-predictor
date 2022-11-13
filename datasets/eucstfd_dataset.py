@@ -12,12 +12,12 @@ class EucstfdDataset(AbstractDataset):
                   'mix', 'mooncake', 'orange', 'pear', 'peach', 'plum', 'qiwi', 'sachima', 'tomato']
     LABEL_COL = 'weight(g)'
     ID_COL = 'id'
-    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='ecustfd', label_filename='density.xls')
+    DATASET_PATH_CREATOR = DatasetPathCreator(dataset_dir_name='ecustfd', label_filename='density.xls')
 
     def __init__(self, use_ingredients_mass=False):
         self._food_info = None
         self.use_ingredients_mass = use_ingredients_mass
-        super().__init__(self.dataset_paths_creator)
+        super().__init__(self.DATASET_PATH_CREATOR)
 
     def get_food_info(self) -> pd.DataFrame:
         """

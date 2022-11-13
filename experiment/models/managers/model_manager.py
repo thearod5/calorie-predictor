@@ -27,7 +27,7 @@ class ModelManager(ABC):
 
     @staticmethod
     @abstractmethod
-    def _get_feature_layer(model: Model) -> Layer:
+    def get_feature_layer(model: Model) -> Layer:
         """
         Returns the feature layer of the model.
         :return: The feature layer.

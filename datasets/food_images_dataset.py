@@ -11,11 +11,11 @@ from experiment.Food2Index import Food2Index
 
 
 class FoodImagesDataset(AbstractDataset):
-    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='food_images', label_filename='labels.yml')
+    DATASET_PATH_CREATOR = DatasetPathCreator(dataset_dir_name='food_images', label_filename='labels.yml')
 
     def __init__(self):
         self._image_class_mappings = {}
-        super().__init__(self.dataset_paths_creator)
+        super().__init__(self.DATASET_PATH_CREATOR)
 
     @staticmethod
     def get_image_paths(image_dir: str) -> List:

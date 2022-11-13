@@ -26,6 +26,10 @@ libclang==13.0.0
 Markdown==3.3.6
 matplotlib==3.5.1
 numpy==1.21.5
+nvidia-cublas-cu11==11.10.3.66
+nvidia-cuda-nvrtc-cu11==11.7.99
+nvidia-cuda-runtime-cu11==11.7.99
+nvidia-cudnn-cu11==8.5.0.96
 oauthlib==3.2.0
 opencv-python==4.5.5.64
 openpyxl==3.0.9
@@ -39,6 +43,7 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pyparsing==3.0.7
 python-dateutil==2.8.2
+python-dotenv==0.21.0
 pytz==2021.3
 PyYAML==5.3.1
 requests==2.27.1
@@ -57,6 +62,7 @@ tensorflow-io-gcs-filesystem==0.24.0
 tensorflow-metadata==1.7.0
 termcolor==1.1.0
 threadpoolctl==3.1.0
+torch==1.13.0
 tqdm==4.63.0
 typing_extensions==4.1.1
 urllib3==1.26.8

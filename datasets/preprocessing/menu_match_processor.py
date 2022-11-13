@@ -8,8 +8,8 @@ from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 
 
 class MenuMatchPrecessor(BaseProcessor):
-    ITEMS_INFO_FILE = os.path.join(MenuMatchDataset.dataset_paths_creator.source_dir, 'items_info.txt')
-    LABEL_FILE = os.path.join(MenuMatchDataset.dataset_paths_creator.source_dir, "labels.txt")
+    ITEMS_INFO_FILE = os.path.join(MenuMatchDataset.DATASET_PATH_CREATOR.source_dir, 'items_info.txt')
+    LABEL_FILE = os.path.join(MenuMatchDataset.DATASET_PATH_CREATOR.source_dir, "labels.txt")
 
     INDEX_COL = 'labelindatabase'
     CALORIES_COL = 'Calories'
@@ -21,7 +21,7 @@ class MenuMatchPrecessor(BaseProcessor):
     MISSING_IMGS = {'img10.jpg'}
 
     def __init__(self):
-        super().__init__(MenuMatchDataset.dataset_paths_creator, "foodimages")
+        super().__init__(MenuMatchDataset.DATASET_PATH_CREATOR, "foodimages")
 
     def pre_process(self, settings: ProcessingSettings):
         """

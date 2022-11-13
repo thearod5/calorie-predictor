@@ -5,7 +5,7 @@ import torch
 from torch import nn, optim
 from tqdm import tqdm
 
-from constants import PATH_TO_OUTPUT_DIR
+from constants import PATH_TO_OUTPUT_DIR, get_data_dir, CAM_PATH
 from datasets.abstract_dataset import AbstractDataset
 from experiment.cam.cam_dataset_converter import CamDatasetConverter
 from experiment.models.managers.model_manager import ModelManager
@@ -15,11 +15,11 @@ class CamTrainer:
     def __init__(self, model_manager: ModelManager):
         self.model_manager = model_manager
         self.model = model_manager.get_model()
-        self.log_path = os.path.join(PATH_TO_OUTPUT_DIR, "logs")
-        self.base_cam_path = os.path.join(PATH_TO_OUTPUT_DIR, "cam")
+        self.log_path = os.path.join(get_data_dir(), "logs")
+        self.base_cam_path = CAM_PATH
 
-    def train(self, training_data: AbstractDataset, n_epochs=3, alpha=1, lr=0.005, weight_decay=1e-6, momentum=0.9):
-        cam_path = os.path.join(self.base_cam_path, training_data.__class__.__name__)
+    def train(self, training_data: AbstractDataset, n_epochs=3, alpha=0.5, lr=0.005, weight_decay=1e-6, momentum=0.9):
+        cam_path = os.path.join(self.base_cam_path, training_data.dataset_path_creator.name)
         cam_dataset = CamDatasetConverter(training_data, cam_path).convert()
         log = {'iterations': [], 'epoch': [], 'validation': [], 'train_acc': [], 'val_acc': []}
         criterion = nn.CrossEntropyLoss()
@@ -46,9 +46,9 @@ class CamTrainer:
                 acc += corr.item()
                 tot += data.size(0)
                 class_loss = criterion(outputs, cls)
-            # Running model over data
-            if alpha != 1:
-                features = self.model_manager._get_feature_layer(self.model).output
+
+                # Running model over data
+                features = self.model_manager.get_feature_layer(self.model).output
                 params = self.model_manager.get_parameters()
 
                 bz, nc, h, w = features.shape
@@ -64,19 +64,18 @@ class CamTrainer:
                     cams.append(cam_img)
                 cams = torch.stack(cams)
                 hmap_loss = criterion_hmap(cams, hmap)
-            else:
-                hmap_loss = 0
-            loss = alpha * class_loss + (1 - alpha) * hmap_loss if alpha != 1.0 else class_loss
 
-            solver.zero_grad()
-            loss.backward()
-            solver.step()
-            train_loss.append(tloss / c)
-            train_step += 1
-            tloss += loss.item()
-            c += 1
+                loss = alpha * class_loss + (1 - alpha) * hmap_loss
 
-            self.log_step_progress(acc, c, epoch, log, loss, tloss, tot)
+                solver.zero_grad()
+                loss.backward()
+                solver.step()
+                train_loss.append(tloss / c)
+                train_step += 1
+                tloss += loss.item()
+                c += 1
+
+                self.log_step_progress(acc, c, epoch, log, loss, tloss, tot)
 
         self.save_model(log, epoch, solver)
 

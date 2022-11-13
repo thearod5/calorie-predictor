@@ -7,11 +7,11 @@ from datasets.dataset_path_creator import DatasetPathCreator
 
 
 class MenuMatchDataset(AbstractDataset):
-    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='menu_match', label_filename='total_calories.yml')
+    DATASET_PATH_CREATOR = DatasetPathCreator(dataset_dir_name='menu_match', label_filename='total_calories.yml')
 
     def __init__(self):
         self._image_calorie_mappings = None
-        super().__init__(self.dataset_paths_creator)
+        super().__init__(self.DATASET_PATH_CREATOR)
 
     def get_image_calorie_mappings(self) -> Dict[str, float]:
         """

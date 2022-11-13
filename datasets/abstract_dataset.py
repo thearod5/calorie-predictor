@@ -16,6 +16,7 @@ class AbstractDataset:
         Represents a dataset for calorie predictor
         :param dataset_path_creator: handles making the paths for a given dataset
         """
+        self.dataset_path_creator = dataset_path_creator
         self.dataset_dir = dataset_path_creator.dataset_dir
         self.label_file = dataset_path_creator.label_file
         self.image_dir = dataset_path_creator.image_dir

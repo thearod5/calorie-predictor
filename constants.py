@@ -45,3 +45,7 @@ def get_data_dir():
 def set_data(test_env: str):
     global ENV
     ENV = test_env
+
+
+CAM_PATH = os.path.join(get_data_dir(), "cam")
+DEFAULT_TURK_RESULTS = os.path.join(PROJECT_DIR, "turk_task", "data")
