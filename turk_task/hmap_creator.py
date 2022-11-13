@@ -38,7 +38,7 @@ class HMapCreator:
         :return: None
         """
         dataset_path = os.path.join(CAM_PATH, self.dataset.dataset_path_creator.name)
-        for image_name in self.dataset.get_image_names():
+        for image_name in self.dataset.get_image_names(with_extension=True):
             HMapCreator.save_avg_hmap_for_image(dataset_path, image_name)
 
     @staticmethod

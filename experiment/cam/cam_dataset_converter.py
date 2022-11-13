@@ -3,7 +3,6 @@ import os
 import tensorflow as tf
 import torch
 from PIL import Image
-
 from tensorflow.keras.layers import Reshape
 
 from datasets.abstract_dataset import AbstractDataset
@@ -20,7 +19,7 @@ class CamDatasetConverter:
 
     def convert(self) -> tf.data.Dataset:
         dataset_cams = []
-        for image_name in self.dataset.get_image_names():
+        for image_name in self.dataset.get_image_names(with_extension=True):
             human_map = self.__read_human_map(image_name)
             cam_map = self.__convert_map_to_cam(human_map)
             dataset_cams.append(cam_map)

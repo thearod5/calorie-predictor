@@ -54,12 +54,12 @@ class AbstractDataset:
                 os.listdir(image_dir) if
                 filename[0] != "." and filename != ""]  # ignore system files
 
-    def get_image_names(self) -> List[str]:
+    def get_image_names(self, with_extension=None) -> List[str]:
         """
         Gets the image names
         :return: a list of image names
         """
-        return list(map(self.get_name_from_path, self.image_paths))
+        return list(map(lambda n: self.get_name_from_path(n, with_extension=with_extension), self.image_paths))
 
     def get_labels(self) -> tf.data.Dataset:
         """
@@ -128,13 +128,16 @@ class AbstractDataset:
         return tf.image.resize(img, IMAGE_SIZE)
 
     @staticmethod
-    def get_name_from_path(path: str) -> str:
+    def get_name_from_path(path: str, with_extension=False) -> str:
         """
         Extracts the name from the path
         :param path: the path
         :return: the name
         """
-        return os.path.split(path)[-1].split(EXT_SEP)[0]
+        file_name = os.path.split(path)[-1]
+        if not with_extension:
+            file_name = file_name.split(EXT_SEP)[0]
+        return file_name
 
     @staticmethod
     def split_dataset(dataset: tf.data.Dataset, image_count: int, test_split_size: float) -> Tuple[
