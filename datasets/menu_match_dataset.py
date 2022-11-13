@@ -2,17 +2,15 @@ from typing import Dict
 
 import yaml
 
-from cleaning.dataset import Dataset
+from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
 
-class MenuMatchDataset(Dataset):
+class MenuMatchDataset(AbstractDataset):
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='menu_match', label_filename='total_calories.yml')
 
     def __init__(self):
-        """
-        constructor
-        """
-        super().__init__('menu_match', 'total_calories.yml')
         self._image_calorie_mappings = None
+        super().__init__(self.dataset_paths_creator)
 
     def get_image_calorie_mappings(self) -> Dict[str, float]:
         """
@@ -30,5 +28,3 @@ class MenuMatchDataset(Dataset):
         :return: the calories
         """
         return self.get_image_calorie_mappings()[image_name]
-
-

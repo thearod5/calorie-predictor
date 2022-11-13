@@ -1,19 +1,21 @@
 import logging.config
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from enum import Enum
+from typing import Any, Dict, List, Tuple
 
+import keras
 import matplotlib.pyplot as plt
-import numpy as np
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Dropout, GlobalAveragePooling2D
-from sklearn.metrics import confusion_matrix
-from tensorflow.keras.metrics import mean_absolute_error
+from keras.losses import mean_absolute_error
+from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.python.data import Dataset
 
+from datasets.abstract_dataset import AbstractDataset
 from experiment.Food2Index import Food2Index
-from experiment.models.base_models import BASE_MODELS, BaseModel, PRE_TRAINED_MODELS
 from experiment.models.checkpoint_creator import get_checkpoint_path
+from experiment.models.model_identifiers import BaseModel, PRE_TRAINED_MODELS
 from logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
@@ -39,13 +41,29 @@ def sample_data(data: Dataset):
         plt.axis("off")
 
 
-class Task:
-    def __init__(self,
-                 base_model: str,
-                 n_outputs=1,
-                 n_epochs=N_EPOCHS,
-                 load_weights=True,
-                 load_on_init=True):
+augmentation_generator = ImageDataGenerator(rotation_range=15,
+                                            width_shift_range=0.1,
+                                            height_shift_range=0.1,
+                                            shear_range=0.01,
+                                            zoom_range=[0.9, 1.25],
+                                            horizontal_flip=True,
+                                            vertical_flip=False,
+                                            fill_mode='reflect',
+                                            data_format='channels_last',
+                                            brightness_range=[0.5, 1.5])
+
+
+class BaseTask:
+    def __init__(self, base_model: BaseModel, n_outputs: int = 1, n_epochs: int = N_EPOCHS, load_weights: bool = True,
+                 load_on_init: bool = True):
+        """
+        Represents a task for the model
+        :param base_model: the model to use for the task
+        :param n_outputs: the number of nodes for the output layer
+        :param n_epochs: the number of epochs to run training for
+        :param load_weights: if True, loads existing weights
+        :param load_on_init: if True, loads the model in task __init__
+        """
         section_heading = "Run Settings"
         logger.info(format_header(section_heading))
         logger.info("Task: " + self.__class__.__name__)
@@ -53,10 +71,9 @@ class Task:
         self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
-        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, base_model)
+        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, base_model.name.lower())
         self.model = self.make_model(base_model,
                                      n_outputs,
-                                     self.__class__.__name__,
                                      base_model in PRE_TRAINED_MODELS)
         if load_on_init:
             self.load_model()
@@ -64,63 +81,109 @@ class Task:
 
     @property
     @abstractmethod
-    def loss_function(self):
+    def loss_function(self) -> keras.losses.Loss:
+        """
+        Defines the loss function for the model
+        :return: the loss function
+        """
         pass
 
     @property
     @abstractmethod
-    def metric(self):
+    def metric(self) -> str:
+        """
+        Defines the name of the metric to use for evaluating the model
+        :return: the name of the metric
+        """
         pass
 
     @property
     @abstractmethod
-    def task_type(self):
+    def task_type(self) -> TaskType:
+        """
+        Defines the type of task (e.g. Classification or Regression)
+        :return:
+        """
         pass
 
     @property
     @abstractmethod
-    def task_mode(self):
+    def task_mode(self) -> TaskMode:
+        """
+        Defines the task mode (e.g. Train or Eval)
+        :return: the task mode
+        """
         pass
 
     @abstractmethod
-    def get_eval_dataset(self, name: str) -> [str]:
+    def get_eval_dataset(self, name: str) -> tf.data.Dataset:
+        """
+        Gets the dataset to use for evaluation
+        :param name: the name of the dataset
+        :return: the dataset
+        """
         pass
 
     @abstractmethod
-    def get_training_data(self):
+    def get_training_data(self) -> tf.data.Dataset:
+        """
+        Gets the dataset to use for training
+        :return: the dataset
+        """
         pass
 
     @abstractmethod
-    def get_validation_data(self):
+    def get_validation_data(self) -> tf.data.Dataset:
+        """
+        Gets the dataset to use for validation
+        :return: the dataset
+        """
         pass
 
     @abstractmethod
-    def get_test_data(self):
+    def get_test_data(self) -> tf.data.Dataset:
+        """
+        Gets the dataset to use for testing
+        :return: the dataset
+        """
         pass
 
     @abstractmethod
-    def eval(self, dataset):
+    def eval(self, dataset_name: str):
+        """
+        Evaluates the model on the given dataset
+        :param dataset_name: the name of the dataset to evaluate on
+        :return: None
+        """
         pass
 
-    def make_model(self, base_model_name, n_outputs: int, task_name, pre_trained_model=True):
-        base_model_class = BASE_MODELS[base_model_name]
+    def make_model(self, base_model: BaseModel, n_outputs: int, pre_trained_model=True) -> tf.keras.Model:
+        """
+         Makes the task's model
+         :param base_model: the model to use for the task
+         :param n_outputs: the number of nodes for the output layer
+         :param pre_trained_model: if True, assumes base_model is a pre_trained_model
+         :return the model
+         """
+        base_model_class = base_model.value
+        task_name = self.__class__.__name__
         if pre_trained_model:
             inputs = tf.keras.Input(shape=INPUT_SHAPE)
-            base_model = base_model_class(
+            base_model_obj = base_model_class(
                 pooling='avg',
                 include_top=False,
                 input_shape=INPUT_SHAPE,
                 weights="imagenet",
                 input_tensor=inputs
             )
-            for layer in base_model.layers:
-                layer._name = "_".join([layer.name, base_model_name, task_name])
+            for layer in base_model_obj.layers:
+                layer._name = "_".join([layer.name, base_model.name, task_name])
         else:
-            base_model = base_model_class()
-        output_layer_name = "_".join(["output", base_model_name, task_name])
-        model_name = "_".join([base_model_name, task_name])
+            base_model_obj = base_model_class()
+        output_layer_name = "_".join(["output", base_model.name, task_name])
+        model_name = "_".join([base_model.name, task_name])
         activation_function = None
-        x = base_model.output
+        x = base_model_obj.output
         if self.task_mode == TaskType.CLASSIFICATION:
             activation_function = "softmax"
             x = GlobalAveragePooling2D()(x)
@@ -129,20 +192,28 @@ class Task:
         output_layer = tf.keras.layers.Dense(n_outputs,
                                              name=output_layer_name,
                                              activation=activation_function)(x)
-        model = tf.keras.Model(inputs=base_model.input, outputs=output_layer, name=model_name)
+        model = tf.keras.Model(inputs=base_model_obj.input, outputs=output_layer, name=model_name)
         return model
 
     def load_model(self):
+        """
+        Handles loading the model weights and/or compiling
+        :return: None
+        """
         if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
             self.model = tf.keras.models.load_model(self.checkpoint_path)
             weights = "Previous best on validation"
         else:
             self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
             weights = "Random"
-        logger.info(format_name_val_info("Model", self.base_model))
+        logger.info(format_name_val_info("Model", self.base_model.name))
         logger.info(format_name_val_info("Weights", weights))
 
     def train(self):
+        """
+        Trains the model
+        :return: None
+        """
         logger.info(format_header("Training"))
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
@@ -151,124 +222,81 @@ class Task:
             mode=self.task_mode,
             verbose=1,
             save_best_only=True)
-        self.model.fit(self.get_training_data(),
+        training_data = self.get_training_data()
+        self.model.fit(self.augment_dataset(training_data),
                        epochs=self.n_epochs,
                        validation_data=self.get_validation_data(),
                        callbacks=[model_checkpoint_callback])
 
-    def get_predictions(self, data):
+    def get_predictions(self, data) -> Tuple[List, Any]:
+        """
+        Gets the models predictions
+        :param data: data to predict on
+        :return: the expected results and those predicted
+        """
         logger.info(format_header("Predicting"))
         y_pred = self.model.predict(data)
         y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
 
+    @staticmethod
+    def augment_dataset(in_gen):
+        for in_x, in_y in in_gen:
+            g_x = augmentation_generator.flow(in_x,
+                                              in_y,
+                                              batch_size=in_x.shape[0])
+            x, y = next(g_x)
 
-class RegressionTask(Task, ABC):
-    task_type = TaskType.REGRESSION
-    loss_function = "mse"
-    metric = "mae"
-    task_mode = "min"
+            yield x, y
 
-    def __init__(self,
-                 base_model: BaseModel,
-                 n_outputs=1,
-                 n_epochs=N_EPOCHS,
-                 load_weights=True,
-                 load_on_init=True):
-        super().__init__(base_model,
-                         n_outputs,
-                         n_epochs,
-                         load_weights=load_weights,
-                         load_on_init=load_on_init)
-
-    def eval(self, _):
-        y_true, y_pred = self.get_predictions(self.get_test_data())
-        mae = mean_absolute_error(y_true.flatten(), y_pred.flatten()).numpy()
-        logger.info(format_name_val_info("Test Mean Absolute Error", mae))
-
-    def get_predictions(self, data):
+    @staticmethod
+    def initialize_dict_entry(dict_: dict, key: str, init_val=0) -> Dict:
         """
-        Performs data conversion from 1D tensors to single numbers.
-        :param data: The data to get predictions from.
-        :return: The true y values and the predicted values respectively.
+        Initializes a key in the dictionary the given init_val
+        :param dict_: the dictionary
+        :param key: the key to initialize inside the dictionary
+        :param init_val: the value to initialize the entry to
+        :return: the dictionary
         """
-        y_true, y_pred = super().get_predictions(data)
-        y_true = list(map(lambda v: v.numpy(), y_true))  # unpacks 1D vector into single number
-        y_true = np.array(y_true)
-        return y_true, y_pred
+        if key not in dict_:
+            dict_[key] = init_val
+        return dict_
 
+    @staticmethod
+    def increment_dict_entry(dict_, key, child_key=None):
+        """
+        Increments the entry in a dictionary by 1
+        :param dict_: the dictionary
+        :param key: the key containing the value to increment
+        :param child_key: if provided, increments the value inside of the child_key which is in the dictionary mapped to the key
+        :return: None
+        """
+        dict_ = BaseTask.initialize_dict_entry(dict_, key, init_val={} if child_key else 0)
+        if child_key:
+            dict_ = BaseTask.initialize_dict_entry(dict_[key], child_key)
+        dict_[key] += 1
 
-class ClassificationTask(Task, ABC):
-    task_type = TaskType.CLASSIFICATION
-    loss_function = tf.keras.losses.CategoricalCrossentropy()
-    metric = "accuracy"
-    task_mode = "max"
+    @staticmethod
+    def combine_datasets(datasets: List[AbstractDataset]) -> Tuple[AbstractDataset, int]:
+        """
+        Combines the datasets in the list
+        :param datasets: a list of a datasets
+        :return: the new combined dataset and the total image count after combining
+        """
+        dataset = datasets[0].get_dataset(shuffle=False)
+        image_count = len(datasets[0].get_image_paths())
+        for d in datasets[1:]:
+            dataset = dataset.concatenate(d.get_dataset(shuffle=False))
+            image_count += len(d.get_image_paths())
+        return dataset, image_count
 
-    def __init__(self,
-                 base_model: BaseModel,
-                 n_outputs=1,
-                 n_epochs=N_EPOCHS,
-                 load_weights=True,
-                 load_on_init=True):
-        super().__init__(base_model, n_outputs, n_epochs, load_weights, load_on_init)
-
-    def eval(self, dataset_name=None):
-        logger.info(format_header("Eval"))
-        data = self.get_test_data() if dataset_name is None else self.get_eval_dataset(dataset_name)
-        food2index = Food2Index()
-
-        y_test, y_pred = self.get_predictions(data)  # no validation data on any class. task
-
-        predictions = []
-        labels = []
-
-        class_tp = {}
-        class_fp = {}
-        class_fn = {}
-
-        for test_vector, pred_vector in zip(y_test, y_pred):
-            pred = np.argmax(pred_vector)
-            label = np.argmax(test_vector)
-
-            pred_name = food2index.get_ingredient(pred)
-            label_name = food2index.get_ingredient(label)
-
-            predictions.append(pred_name)
-            labels.append(label_name)
-
-            if pred == label:
-                increment_dict_entry(class_tp, label_name)
-            else:
-                increment_dict_entry(class_fp, pred_name, label_name)
-                increment_dict_entry(class_fn, label_name, pred_name)
-
-        print_metrics(labels, predictions)
-        logger.info(format_eval_results(class_tp, "TP"))
-        logger.info(format_eval_results(class_fp, "FP"))
-        logger.info(format_eval_results(class_fn, "FN"))
-
-
-def print_metrics(labels, predictions):
-    matrix = confusion_matrix(labels, predictions)
-    FP = matrix.sum(axis=0) - np.diag(matrix)
-    FN = matrix.sum(axis=1) - np.diag(matrix)
-    TP = np.diag(matrix)
-    TN = matrix.sum() - (FP + FN + TP)
-    logger.info("Predictions: %s" % len(predictions))
-    logger.info("False Positive: %s" % FP.sum())
-    logger.info("False Negatives: %s" % FN.sum())
-    logger.info("True Positive: %s" % TP.sum())
-    logger.info("True Negative: %s" % TN.sum())
-
-
-def initialize_dict_entry(dict_, key, init_val=0):
-    if key not in dict_:
-        dict_[key] = init_val
-    return dict_, key
-
-
-def increment_dict_entry(dict_, key, child_key=None):
-    dict_, key = initialize_dict_entry(dict_, key, init_val={} if child_key else 0)
-    if child_key:
-        dict_, key = initialize_dict_entry(dict_[key], child_key)
-    dict_[key] += 1
+    @staticmethod
+    def print_datasets(datasets: List[AbstractDataset], image_count: int):
+        """
+        Prints the names of all datasets in the list and the total image count
+        :param datasets: a list of datasets
+        :param image_count: the image count
+        :return: None
+        """
+        print("Datasets:", ", ".join([d.__class__.__name__ for d in datasets]))
+        print("Image Count:", image_count)

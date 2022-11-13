@@ -11,13 +11,25 @@ data. Due to time constraints,only one pretraining step - mass predicition - was
 In total, we use five different datasets containing images of food which are described in Table 1 below. For each task, at least two datasets are selected and split to construct training, validation, and testing splits. A breakdown of which datasets will be used for each task can be seen in Table 2. With the exception of the food classification task, we use one of the datasets for training and validation and the other for testing. Due to the abundance of data for food classification, we also use a different dataset for validation in this task. We will additionally collect a dataset from Amazon Turk which includes information about which foods in an image appear most caloric to human viewers. This dataset will be used to create saliency maps as discussed in the section above.
 
 ##### TABLE 1: Datasets used during the pre-training and regular training of our neural models.
-| Name        | Description | Size        |
-| ----------- | ----------- | ----------- |
-| [Food-101](https://kaggle.com/kmader/food41) | Images of food spanning over 101 categories.| 101K |
-| [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | Tray images with multiple foods and containing 15 food categories.| 2K |
-| [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) | Images of food and their weight| 3K |
-| [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | Images of food, their calorie counts, ingredients and weight| 5K |
-| [MenuMatch](http://neelj.com/projects/menumatch/data/) | Images of food and their calorie counts| 646 |
+| Name        | Description | Size        | Sample Characteristics |
+| ----------- | ----------- | ----------- | ----------- |
+| [Food-101](https://kaggle.com/kmader/food41) | Images of food spanning over 101 categories.| 101K | FOOD101-CHARACTERISTICS |
+| [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | Tray images with multiple foods and containing 15 food categories.| 2K | CHARACTERISTICS |
+| [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) | Images of food and their weight| 3K | ECUST-CHARACTERISTICS |
+| [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | Images of food, their calorie counts, ingredients and weight| 5K | CHARACTERISTICS |
+| [MenuMatch](http://neelj.com/projects/menumatch/data/) | Images of food and their calorie counts| 646 | MenuMatch-CHARACTERISTICS |
+| [MenuMatch with human annotations]() | For each image in this dataset, we are hiring Amazon Mechanical Turk workers to create a bounding box over the region of the food they think is most caloric. See below for example. | 1938 | MenuMatch-Annotations-CHARACTERISTICS |
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/26884108/192034289-e5ad072d-477e-4b88-9cd6-676b0c97dc14.jpg" alt="Example image for MenuMatch with human annotation."/>
+</p>
+
+##### TABLE 2: Tasks and the datasets used in each.
+| Name        | Training Data | Validation Data | Testing Data |
+| ----------- | -----------   | -----------     | ----------- |
+| Food Classification (Pre-training) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | N/A |
+| Mass Prediction (Pre-training) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) |
+| Calorie Prediction (Regular training) | [MenuMatch + Annotations](http://neelj.com/projects/menumatch/data/) | [MenuMatch + Annotations](http://neelj.com/projects/menumatch/data/) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) |
 
 ## WINTER 2022
 
@@ -30,13 +42,6 @@ To overcome this problem, we plan to combine two pre-trained models. The first w
 
 #### Data
 In total, we use five different datasets containing images of food which are described in Table 1 below. For each task, at least two datasets are selected and split to construct training, validation, and testing splits. A breakdown of which datasets will be used for each task can be seen in Table 2. With the exception of the food classification task, we use one of the datasets for training and validation and the other for testing. Due to the abundance of data for food classification, we also use a different dataset for validation in this task.
-
-##### TABLE 2: Tasks and the datasets used in each.
-| Name        | Training Data | Validation Data | Testing Data |
-| ----------- | -----------   | -----------     | ----------- |
-| Food Classification (Pre-training) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | N/A |
-| Mass Prediction (Pre-training) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) |
-| Calorie Prediction (Regular training) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [MenuMatch](http://neelj.com/projects/menumatch/data/) |
 
 #### Neural Models
 ***VGG16:*** Originating from the *Oxford Visual Geometry Group*, this model uses a series of small convolutional filters (3x3) stacked deeply in a series of 16 layers. Specifically, the model accepts an RGB image of size 224x224 and passes it through 2 layers of 64 3x3 convolutions which are pooled using a max pooling layer. Then, this pattern of using 3x3 convolutions and pooling is repeated with the number of convolutions being 128, 256, 512, and 512. Finally, there three connected layers lie at the end of the convolutional layers containing 4096, 4096, and 1000 with the softmax activation function applied to transforms the final values into a prediction of 1000 classes.

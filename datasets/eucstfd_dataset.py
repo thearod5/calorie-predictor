@@ -2,23 +2,21 @@ from typing import List
 
 import pandas as pd
 
-from cleaning.dataset import Dataset
+from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
 
 
-class EucstfdDataset(Dataset):
-    food_types = ['apple', 'banana', 'bread', 'bun', 'doughnut', 'egg', 'fired_dough_twist', 'grape', 'lemon', 'litchi',
+class EucstfdDataset(AbstractDataset):
+    FOOD_TYPES = ['apple', 'banana', 'bread', 'bun', 'doughnut', 'egg', 'fired_dough_twist', 'grape', 'lemon', 'litchi',
                   'mango',
                   'mix', 'mooncake', 'orange', 'pear', 'peach', 'plum', 'qiwi', 'sachima', 'tomato']
-    label_col = 'weight(g)'
-    id_col = 'id'
+    LABEL_COL = 'weight(g)'
+    ID_COL = 'id'
+    dataset_paths_creator = DatasetPathCreator(dataset_dir_name='ecustfd', label_filename='density.xls')
 
     def __init__(self, use_ingredients_mass=False):
-        """
-        constructor
-        """
-        super().__init__('eucstfd', 'density.xls')
         self._food_info = None
         self.use_ingredients_mass = use_ingredients_mass
+        super().__init__(self.dataset_paths_creator)
 
     def get_food_info(self) -> pd.DataFrame:
         """
@@ -26,7 +24,7 @@ class EucstfdDataset(Dataset):
         :return: the dataframe of food info
         """
         if self._food_info is None:
-            excel_sheets = pd.read_excel(self.label_file, sheet_name=self.food_types, index_col=self.id_col)
+            excel_sheets = pd.read_excel(self.label_file, sheet_name=self.FOOD_TYPES, index_col=self.ID_COL)
             self._food_info = pd.concat(excel_sheets.values(), ignore_index=False)
         return self._food_info
 
@@ -37,7 +35,7 @@ class EucstfdDataset(Dataset):
         :return: a list of weights for the image
         """
         image_name = image_name.split('(')[0][:-1]  # TODO probably a better way to do this but idk
-        labels = self.get_food_info().loc[image_name][self.label_col]
+        labels = self.get_food_info().loc[image_name][self.LABEL_COL]
         if self.use_ingredients_mass:
             labels = list(labels) if isinstance(labels, pd.Series) else [labels]
         elif isinstance(labels, pd.Series):
