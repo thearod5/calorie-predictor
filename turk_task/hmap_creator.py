@@ -112,7 +112,7 @@ class HMapCreator:
             cv2.imwrite(export_path, avg_hmap)
 
     @staticmethod
-    def read_image(image_url: str) -> np.Array:
+    def read_image(image_url: str):
         """
         Downloads and reads image from url.
         :param image_url: The url to the image to read
