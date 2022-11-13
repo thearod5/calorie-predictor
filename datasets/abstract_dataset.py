@@ -6,60 +6,8 @@ import tensorflow as tf
 from tensorflow.python.data import AUTOTUNE
 
 from constants import *
+from datasets.dataset_path_creator import DatasetPathCreator
 from experiment.Food2Index import Food2Index
-
-
-class DatasetPathCreator:
-
-    def __init__(self, dataset_dir_name: str, label_filename: str):
-        """
-        Handles constructing the paths to the data
-        :param dataset_dir_name: name of the directory for the dataset
-        :param label_filename: name of the file containing all image labels
-        :param data_dir: name of directory containing the data
-        """
-        self.dataset_dir = self._create_dataset_dir_path(dataset_dir_name)
-        self.label_file = self._create_label_file_path(self.dataset_dir, label_filename)
-        self.image_dir = self._create_image_dir_path(self.dataset_dir)
-        self.source_dir = self._create_source_dataset_path(dataset_dir_name)
-
-    @staticmethod
-    def _create_source_dataset_path(dataset_dir_name: str) -> str:
-        """
-        Create the path to the unprocessed data
-        :param dataset_dir_name: name of the base directory for the dataset
-        :return: the path
-        """
-        return os.path.join(PATH_TO_PROJECT, dataset_dir_name)
-
-    @staticmethod
-    def _create_dataset_dir_path(dataset_dir_name: str) -> str:
-        """
-        Creates the base path to the dataset directory
-        :param dataset_dir_name: name of the directory for the dataset
-        :return: the path
-        """
-        data_dir = get_data_dir()
-        return os.path.join(PATH_TO_PROJECT, data_dir, dataset_dir_name)
-
-    @staticmethod
-    def _create_label_file_path(dataset_dir: str, label_filename: str) -> str:
-        """
-        Creates the path to the label file
-        :param dataset_dirname: name of the directory for the dataset
-        :param label_filename: name of the file containing all image labels
-        :return: the path
-        """
-        return os.path.join(dataset_dir, label_filename)
-
-    @staticmethod
-    def _create_image_dir_path(dataset_dir: str) -> str:
-        """
-        Creates the path to the image directory
-        :param dataset_dir: name of the directory for the dataset
-        :return: the path
-        """
-        return os.path.join(dataset_dir, IMAGE_DIR)
 
 
 class AbstractDataset:
@@ -71,11 +19,12 @@ class AbstractDataset:
         self.dataset_dir = dataset_path_creator.dataset_dir
         self.label_file = dataset_path_creator.label_file
         self.image_dir = dataset_path_creator.image_dir
-        image_paths = self.get_image_paths(self.image_dir)
-        self.image_paths = self._remove_unlabeled_images(image_paths)
+        self.image_paths = self.get_image_paths(self.image_dir)
         self._images = None
         self.food2index = Food2Index()
         self.load_data()
+        self.image_paths = self._remove_unlabeled_images(
+            self.image_paths)  # TODO: Currently needs to happen after load data
 
     def load_data(self) -> None:
         """
@@ -153,7 +102,9 @@ class AbstractDataset:
        :return: the dataset
        """
         image_count = len(self.image_paths)
-        ds = tf.data.Dataset.zip((self.get_images(), self.get_labels()))
+        images = self.get_images()
+        labels = self.get_labels()
+        ds = tf.data.Dataset.zip((images, labels))
         if shuffle:
             ds = ds.shuffle(buffer_size=image_count, seed=RANDOM_SEED)
         return ds

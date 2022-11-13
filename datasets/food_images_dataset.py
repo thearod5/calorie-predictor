@@ -5,7 +5,8 @@ import yaml
 from tensorflow import Tensor
 
 from constants import IMAGE_NAME_SEPARATOR
-from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
+from datasets.abstract_dataset import AbstractDataset
+from datasets.dataset_path_creator import DatasetPathCreator
 from experiment.Food2Index import Food2Index
 
 

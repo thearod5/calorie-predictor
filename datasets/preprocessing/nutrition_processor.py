@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 import pandas as pd
 
 from constants import IMAGE_NAME_SEPARATOR
-from datasets.abstract_dataset import DatasetPathCreator
+from datasets.dataset_path_creator import DatasetPathCreator
 from datasets.nutrition_dataset import NutritionDataset
 from datasets.preprocessing.base_processor import BaseProcessor, ProcessingPaths, ProcessingSettings
 

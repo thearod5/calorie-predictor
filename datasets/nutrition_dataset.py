@@ -7,7 +7,8 @@ from typing import *
 from tensorflow import Tensor
 
 from constants import IMAGE_NAME_SEPARATOR, LOG_CONFIG_FILE, LOG_SKIPPED_ENTRIES
-from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
+from datasets.abstract_dataset import AbstractDataset
+from datasets.dataset_path_creator import DatasetPathCreator
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()

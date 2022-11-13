@@ -1,6 +1,7 @@
 import pandas as pd
 
-from datasets.abstract_dataset import AbstractDataset, DatasetPathCreator
+from datasets.abstract_dataset import AbstractDataset
+from datasets.dataset_path_creator import DatasetPathCreator
 
 
 class UnimibDataset(AbstractDataset):
