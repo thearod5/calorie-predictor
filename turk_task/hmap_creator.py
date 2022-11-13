@@ -105,10 +105,11 @@ class HMapCreator:
             avg_hmap = hmap if avg_hmap is None else avg_hmap + hmap
             n_batches += 1
         if avg_hmap is None:
-            raise Exception("Did not find any heat maps for the %s." % image_file_name)
-        avg_hmap = (avg_hmap / n_batches) * 255
-        export_path = os.path.join(dataset_path, image_file_name)
-        cv2.imwrite(export_path, avg_hmap)
+            print("Did not find any heat maps for the %s." % image_file_name)
+        else:
+            avg_hmap = (avg_hmap / n_batches) * 255
+            export_path = os.path.join(dataset_path, image_file_name)
+            cv2.imwrite(export_path, avg_hmap)
 
     @staticmethod
     def read_image(image_url: str) -> np.Array:
