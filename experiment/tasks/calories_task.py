@@ -4,19 +4,19 @@ from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from datasets.menu_match_dataset import MenuMatchDataset
 from datasets.nutrition_dataset import Mode, NutritionDataset
 from experiment.cam.cam_trainer import CamTrainer
-from experiment.models.model_manager import ModelManager
+from experiment.models.managers.model_manager import ModelManager
 from experiment.tasks.regression_base_task import RegressionBaseTask
 
 
 class CaloriePredictionTask(RegressionBaseTask):
 
-    def __init__(self, model_manager: ModelManager, log_path: str, n_epochs=N_EPOCHS, use_cam=False):
+    def __init__(self, model_manager: ModelManager, n_epochs=N_EPOCHS, use_cam=False):
         """
         Represents a Calorie Prediction Task
         :param model_manager: the model to use for the task
         :param n_epochs: the number of epochs to run training for
         """
-        super().__init__(model_manager, log_path, n_epochs=n_epochs)
+        super().__init__(model_manager, n_epochs=n_epochs)
         dataset = NutritionDataset(Mode.CALORIE)
         train, validation = dataset.split_to_train_test(TEST_SPLIT_SIZE)
         test_dataset = MenuMatchDataset()
@@ -25,7 +25,7 @@ class CaloriePredictionTask(RegressionBaseTask):
         self._train = train
         self._validation = validation
         self._test = test_dataset.split_to_train_test().pop()
-        self.trainer = CamTrainer(model_manager, log_path)
+        self.trainer = CamTrainer(model_manager)
 
     def train(self):
         if self.use_cam:

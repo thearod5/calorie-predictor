@@ -3,7 +3,7 @@ import tensorflow as tf
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from datasets.eucstfd_dataset import EucstfdDataset
 from datasets.nutrition_dataset import Mode, NutritionDataset
-from experiment.models.model_manager import ModelManager
+from experiment.models.managers.model_manager import ModelManager
 from experiment.tasks.regression_base_task import RegressionBaseTask
 
 

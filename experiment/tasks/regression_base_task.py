@@ -5,7 +5,8 @@ import numpy as np
 from tensorflow.keras.metrics import mean_absolute_error
 
 from constants import N_EPOCHS
-from experiment.models.model_manager import ModelManager
+from experiment.models.managers.model_manager import ModelManager
+from experiment.tasks.base_task import AbstractTask, logger
 from experiment.tasks.task_type import TaskType
 from logging_utils.utils import format_name_val_info
 
@@ -16,7 +17,7 @@ class RegressionBaseTask(AbstractTask, ABC):
     metric = "mae"
     task_mode = "min"
 
-    def __init__(self, model_manager: ModelManager, log_path: str, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
+    def __init__(self, model_manager: ModelManager, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
                  load_on_init=True):
         """
         Represents a Regression Tasks
@@ -26,7 +27,7 @@ class RegressionBaseTask(AbstractTask, ABC):
         :param load_weights: if True, loads existing weights
         :param load_on_init: if True, loads the model in task __init__
         """
-        super().__init__(model_manager, log_path, n_outputs, n_epochs, load_weights=load_weights,
+        super().__init__(model_manager, n_outputs, n_epochs, load_weights=load_weights,
                          load_on_init=load_on_init)
 
     def eval(self, _):
