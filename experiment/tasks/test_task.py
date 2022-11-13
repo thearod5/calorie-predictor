@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from constants import N_EPOCHS, TEST_SPLIT_SIZE
 from datasets.menu_match_dataset import MenuMatchDataset
-from experiment.models.model_manager import ModelManager
+from experiment.models.managers.model_manager import ModelManager
 from experiment.tasks.regression_base_task import RegressionBaseTask
 
 
