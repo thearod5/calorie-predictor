@@ -37,9 +37,9 @@ class CamDatasetConverter:
         return transform_human_map / torch.max(transform_human_map)
 
     def __map_transform(self):
-        transforms = torch.nn.Sequential(
+        transforms = tf.keras.Sequential(
             Reshape([self.map_size, self.map_size])
             # TODO: add conversion to tensor
             # TODO: add conversion to float
         )
-        return torch.jit.script(transforms)
+        return transforms
