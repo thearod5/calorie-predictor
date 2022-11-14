@@ -66,8 +66,9 @@ class AbstractTask(ABC):
         self.n_epochs = n_epochs
 
         self.model_manager = model_manager
+        is_pretrained = any([isinstance(model_manager, pt.value) for pt in PRE_TRAINED_MODELS])
         self.model = model_manager.create_model((self.task_mode, task_name), n_outputs=n_outputs,
-                                                pre_trained_model=model_manager in PRE_TRAINED_MODELS)
+                                                pre_trained_model=is_pretrained)
         self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, self.model_manager.model_name.lower())
         if load_on_init:
             self.load_model()

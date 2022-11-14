@@ -63,7 +63,7 @@ class ModelManager(ABC):
             task_name = self.__class__.__name__
 
             # 1. Create model
-            base_model = self.__create_base_model(task_name, pre_trained_model)
+            base_model = self.__create_base_model(pre_trained_model)
             model_name = "_".join([self.model_name, task_name])
             output_layer = self.__add_output_head(base_model, task, n_outputs)
             model = tf.keras.Model(inputs=base_model.input, outputs=output_layer, name=model_name)
@@ -73,8 +73,8 @@ class ModelManager(ABC):
             # feature_layer.register_forward_hook(self.__create_feature_hook("features"))
 
             # Given layers readable names
-            for layer in base_model.layers:
-                layer._name = "_".join([layer.name, self.model_name, task_name])
+            # for layer in base_model.layers:
+            #     layer._name = "_".join([layer.name, self.model_name, task_name])
 
             self.__model = model
         return self.__model
@@ -98,7 +98,8 @@ class ModelManager(ABC):
         return x
 
     @staticmethod
-    def create_pre_trained_model(base_model_class: Callable[..., Model], weights: str, pooling: str = "avg") -> Model:
+    def create_pre_trained_model(base_model_class: Callable[..., Model], weights: str = "imagenet", include_top=False,
+                                 pooling: str = "avg") -> Model:
         """
         Creates pre-trained model for task.
         :param base_model_class: The base model defining its architecture.
@@ -109,7 +110,7 @@ class ModelManager(ABC):
         inputs = tf.keras.Input(shape=INPUT_SHAPE)
         base_model_obj = base_model_class(
             pooling=pooling,
-            include_top=False,
+            include_top=include_top,
             input_shape=INPUT_SHAPE,
             weights=weights,
             input_tensor=inputs
@@ -117,17 +118,16 @@ class ModelManager(ABC):
 
         return base_model_obj
 
-    def __create_base_model(self, task_name, is_pretrained):
+    def __create_base_model(self, is_pretrained: bool):
         """
         Creates the base model for given task.
-        :param task_name: The name of the task to be evaluated on.
         :param is_pretrained: Whether to load image_namepre-trained weights.
         :return:
         :rtype:
         """
         base_model_class = self.get_model_constructor()
         if is_pretrained:
-            base_model_obj = self.create_pre_trained_model(base_model_class, task_name, "imagenet")
+            base_model_obj = self.create_pre_trained_model(base_model_class)
         else:
             base_model_obj = base_model_class()
         return base_model_obj

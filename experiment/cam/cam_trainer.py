@@ -1,99 +1,156 @@
 import json
 import os
 
+import tensorflow as tf
 import torch
-from torch import nn, optim
+from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 from tqdm import tqdm
 
-from constants import PATH_TO_OUTPUT_DIR, get_data_dir, CAM_PATH
+from constants import CAM_PATH, get_data_dir
 from datasets.abstract_dataset import AbstractDataset
 from experiment.cam.cam_dataset_converter import CamDatasetConverter
 from experiment.models.managers.model_manager import ModelManager
 
 
+class CamTrainerMetrics:
+    def __init__(self, epoch: int, log_path: str):
+        self.epoch = epoch
+        self.log_path = log_path
+        self.log = {'iterations': [], 'epoch': [], 'validation': [], 'train_acc': [], 'val_acc': []}
+        self.train_step = 0
+        self.accuracy = 0.
+        self.total = 0
+        self.c = 0
+        self.tloss = 0.
+
+    def get_train_loss(self):
+        return self.tloss / self.c
+
+    def get_accuracy(self):
+        return self.accuracy / self.total
+
+    def log_step_progress(self, loss):
+        self.log['iterations'].append(loss.item())
+        self.log['epoch'].append(self.tloss / self.c)
+        self.log['train_acc'].append(self.accuracy / self.total)
+        print('Epoch: ', self.epoch, 'Train loss: ', self.get_train_loss(), 'Accuracy: ', self.get_accuracy())
+
+    def save_log(self):
+        log_file_name = "epoch_log_%d.json" % self.epoch
+        log_export_path = os.path.join(self.log_path, log_file_name)
+        with open(log_export_path, 'w') as out:
+            json.dump(self.log, out)
+        print("Logged:", log_file_name)
+
+
 class CamTrainer:
-    def __init__(self, model_manager: ModelManager):
+    def __init__(self, model_manager: ModelManager, alpha=0.5, lr=0.005, weight_decay=1e-6, momentum=0.9):
         self.model_manager = model_manager
         self.model = model_manager.get_model()
         self.log_path = os.path.join(get_data_dir(), "logs")
         self.base_cam_path = CAM_PATH
+        self.solver = None
+        self.criterion = tf.keras.losses.MeanSquaredError()
+        self.criterion_hmap = tf.keras.losses.MeanSquaredError()
+        self.alpha = alpha
+        self.learning_rate = lr
+        self.weight_decay = weight_decay
+        self.momentum = momentum
 
-    def train(self, training_data: AbstractDataset, n_epochs=3, alpha=0.5, lr=0.005, weight_decay=1e-6, momentum=0.9):
+    def get_solver(self):
+        if self.solver is None:
+            # missing weight decay
+            self.solver = tf.keras.optimizers.SGD(learning_rate=self.learning_rate, momentum=self.momentum)
+        return self.solver
+
+    def train(self, training_data: AbstractDataset, n_epochs=3, ):
         cam_path = os.path.join(self.base_cam_path, training_data.dataset_path_creator.name)
         cam_dataset = CamDatasetConverter(training_data, cam_path).convert()
-        log = {'iterations': [], 'epoch': [], 'validation': [], 'train_acc': [], 'val_acc': []}
-        criterion = nn.CrossEntropyLoss()
-        criterion_hmap = nn.MSELoss()
-        solver = optim.SGD(self.model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
 
         for epoch in range(1, n_epochs + 1):
-            self.perform_cam_epoch(cam_dataset, criterion, criterion_hmap, alpha, epoch, log, solver)
+            metrics = CamTrainerMetrics(epoch, self.log_path)
+            self.perform_cam_epoch(cam_dataset, metrics)
 
-    def perform_cam_epoch(self, training_data, criterion, criterion_hmap, alpha, epoch, log, solver):
-        train_step = 0
-        acc = 0.
-        tot = 0
-        c = 0
-        tloss = 0.
+    def perform_cam_epoch(self, training_data, epoch_metrics: CamTrainerMetrics):
+        solver = self.get_solver()
         train_loss = []
         with torch.set_grad_enabled(True):
-            for batch_idx, (data, cls, hmap) in enumerate(tqdm(training_data)):
+            for batch_idx, (data, cals, hmap) in enumerate(tqdm(training_data)):
                 outputs = self.model(data)
 
                 # Prediction of accuracy
-                pred = torch.max(outputs, dim=1)[1]
-                corr = torch.sum((pred == cls).int())
-                acc += corr.item()
-                tot += data.size(0)
-                class_loss = criterion(outputs, cls)
 
-                # Running model over data
+                # mse = tf.math.sqrt(((tf.cast(cals, tf.float32) - tf.cast(outputs, tf.float32)) ** 2))
+                # epoch_metrics.accuracy += mse
+                # epoch_metrics.total += data[0]
+                # cams = []
+                # for feature_index in range(n_features):
+                #     feature_map = features[:, :, feature_index]
+                #     feature_weight = feature_weights[feature_index]
+                #     cam_img = feature_map * feature_weight
+                #     cam_img = self.normalize(cam_img)
+                #     cams.append(cam_img)
+                # cams = tf.stack(cams)
+
+                # 1. Get features  # TODO: Figure out why batch size is None
                 features = self.model_manager.get_feature_layer(self.model).output
-                params = self.model_manager.get_parameters()
+                feature_weights = self.model_manager.get_parameters()
+                batch_size, feature_height, feature_width, n_features = features.shape
+                features = tf.reshape(features, (feature_height, feature_width, n_features))
 
-                bz, nc, h, w = features.shape
+                # 2. Compute Sk model (weighted sum of the feature maps
+                weighted_features = tf.linalg.matmul(features, feature_weights)
+                weighted_features = self.normalize(weighted_features)
+                weighted_features = tf.convert_to_tensor(weighted_features)
 
-                beforeDot = features.reshape((bz, nc, h * w))
-                cams = []
-                for ids, bd in enumerate(beforeDot):
-                    weight = params[pred[ids]]
-                    cam = torch.matmul(weight, bd)
-                    cam_img = cam.reshape(h, w)
-                    cam_img = cam_img - torch.min(cam_img)
-                    cam_img = cam_img / torch.max(cam_img)
-                    cams.append(cam_img)
-                cams = torch.stack(cams)
-                hmap_loss = criterion_hmap(cams, hmap)
+                # 3. Resize hmaps to feature size
+                hmap = tf.image.resize(hmap, (feature_width, feature_height))
 
-                loss = alpha * class_loss + (1 - alpha) * hmap_loss
+                # 3. Compute class loss and feature map loss
+                class_loss = self.criterion(cals, outputs)
+                hmap_loss = self.criterion_hmap(hmap, weighted_features)
 
-                solver.zero_grad()
-                loss.backward()
-                solver.step()
-                train_loss.append(tloss / c)
-                train_step += 1
-                tloss += loss.item()
-                c += 1
+                class_loss = tf.convert_to_tensor(class_loss)
+                hmap_loss = tf.convert_to_tensor(hmap_loss)
 
-                self.log_step_progress(acc, c, epoch, log, loss, tloss, tot)
+                @tf.function
+                def loss_fn(a: float):
+                    alpha = tf.Variable(a, name="alpha")
+                    alpha_negated = tf.Variable(1 - a, name='bias')
+                    return tf.convert_to_tensor(alpha * class_loss + alpha_negated * hmap_loss)
 
-        self.save_model(log, epoch, solver)
+                # loss = self.alpha * class_loss + (1 - self.alpha) * hmap_loss
+                KerasTensor
+                var_list_fn = lambda: self.model.trainable_weights
+                opt_op = self.solver.minimize(loss_fn(self.alpha), var_list=var_list_fn)
+                opt_op.run()
 
-    def save_model(self, log, epoch, solver):
+                # train_loss.append(epoch_metrics.tloss / epoch_metrics.c)
+                # epoch_metrics.train_step += 1
+                # epoch_metrics.tloss += loss.item()
+                # epoch_metrics.c += 1
+                # epoch_metrics.log_step_progress(loss)
+
+        epoch_metrics.save_log()
+        self.save_model(solver, epoch_metrics)
+
+    def save_model(self, solver, metrics: CamTrainerMetrics):
         states = {
-            'epoch': epoch,
+            'epoch': metrics.epoch,
             'state_dict': self.model.state_dict(),
             'optimizer': solver.state_dict(),
         }
-        log_index = len(os.listdir(self.log_path))
-        log_file_name = "model_log_%s.json" % (log_index)
-        with open(os.path.join(self.log_path, log_file_name), 'w') as out:
-            json.dump(log, out)
         torch.save(states, os.path.join(self.log_path, 'current_model.pth'))
 
     @staticmethod
-    def log_step_progress(acc, c, epoch, log, loss, tloss, tot):
-        log['iterations'].append(loss.item())
-        log['epoch'].append(tloss / c)
-        log['train_acc'].append(acc / tot)
-        print('Epoch: ', epoch, 'Train loss: ', tloss / c, 'Accuracy: ', acc / tot)
+    def normalize(tensor):
+        return tf.divide(
+            tf.subtract(
+                tensor,
+                tf.reduce_min(tensor)
+            ),
+            tf.subtract(
+                tf.reduce_max(tensor),
+                tf.reduce_min(tensor)
+            )
+        )

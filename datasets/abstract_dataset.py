@@ -61,7 +61,7 @@ class AbstractDataset:
         """
         return list(map(lambda n: self.get_name_from_path(n, with_extension=with_extension), self.image_paths))
 
-    def get_labels(self) -> tf.data.Dataset:
+    def get_labels_dataset(self) -> tf.data.Dataset:
         """
         makes a dataset of all image labels
         :return: a tensor flow dataset of all labels
@@ -74,7 +74,7 @@ class AbstractDataset:
             labels = tf.ragged.constant(labels)
         return tf.data.Dataset.from_tensor_slices(labels)
 
-    def get_images(self) -> tf.data.Dataset:
+    def get_images_dataset(self) -> tf.data.Dataset:
         """
         makes a dataset of all processed images
         :return: a dataset of all images
@@ -103,8 +103,8 @@ class AbstractDataset:
        :return: the dataset
        """
         image_count = len(self.image_paths)
-        images = self.get_images()
-        labels = self.get_labels()
+        images = self.get_images_dataset()
+        labels = self.get_labels_dataset()
         ds = tf.data.Dataset.zip((images, labels))
         if shuffle:
             ds = ds.shuffle(buffer_size=image_count, seed=RANDOM_SEED)

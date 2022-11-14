@@ -1,9 +1,9 @@
 import os
+from typing import Tuple
 
 import tensorflow as tf
-import torch
 from PIL import Image
-from tensorflow.keras.layers import Reshape
+from keras_preprocessing.image import load_img
 
 from datasets.abstract_dataset import AbstractDataset
 
@@ -12,34 +12,46 @@ class CamDatasetConverter:
     def __init__(self,
                  dataset: AbstractDataset,
                  map_dir_path: str,
-                 map_size: int = 7):
+                 map_size: Tuple[int, int] = (7, 7)):
         self.dataset = dataset
         self.map_dir_path = map_dir_path
         self.map_size = map_size
+        self.pipeline = self.__create_pipeline()
 
     def convert(self) -> tf.data.Dataset:
-        dataset_cams = []
+        hmaps = []
         for image_name in self.dataset.get_image_names(with_extension=True):
-            human_map = self.__read_human_map(image_name)
-            cam_map = self.__convert_map_to_cam(human_map)
-            dataset_cams.append(cam_map)
-        return tf.data.Dataset.zip((self.dataset.get_images(), self.dataset.get_labels(), dataset_cams))
+            hmap = self.__read_hmap(image_name)
+            hmap = self.pipeline(hmap)
+            # hmap = tf.image.rgb_to_grayscale(hmap)
+            hmaps.append(hmap)
+        hmap_dataset = tf.data.Dataset.from_tensor_slices(hmaps)
+        images_dataset = self.dataset.get_images_dataset()
+        labels_dataset = self.dataset.get_labels_dataset()
+        return tf.data.Dataset.zip((images_dataset, labels_dataset, hmap_dataset)).batch(3)
 
-    def __read_human_map(self, image_name: str) -> Image:
-        map_path = os.path.join(self.map_dir_path, image_name)
-        with Image.open(map_path) as im:
-            return im
+    def __read_hmap(self, image_name: str) -> Image:
+        hmap_path = os.path.join(self.map_dir_path, image_name)
+        return load_img(hmap_path)
 
-    def __convert_map_to_cam(self, human_map: Image):
-        transform_human_map = self.__map_transform()(human_map)
-        transform_human_map = torch.squeeze(transform_human_map)
-        transform_human_map = transform_human_map - torch.min(transform_human_map)
-        return transform_human_map / torch.max(transform_human_map)
+    def __create_pipeline(self):
+        def pipeline(image):
+            image = tf.image.resize(image, (self.map_size[0], self.map_size[1]))
+            image = CamDatasetConverter.normalize(image)
+            image = tf.convert_to_tensor(image)
+            return image
 
-    def __map_transform(self):
-        transforms = tf.keras.Sequential(
-            Reshape([self.map_size, self.map_size])
-            # TODO: add conversion to tensor
-            # TODO: add conversion to float
+        return pipeline
+
+    @staticmethod
+    def normalize(tensor):
+        return tf.divide(
+            tf.subtract(
+                tensor,
+                tf.reduce_min(tensor)
+            ),
+            tf.subtract(
+                tf.reduce_max(tensor),
+                tf.reduce_min(tensor)
+            )
         )
-        return transforms
