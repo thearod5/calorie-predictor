@@ -1,6 +1,7 @@
 # Calorie Predictor
 
-## FALL 2022 
+## Summary
+The following report describes an experiment examining the performance of popular CNNs on a the calorie prediction task. The baseline method uses ResNet, Xception, and other CNNS to train directly on this task. Our first experimental condition pre-trains a model on a food classification task before the downstream calorie prediction task. Lastly, we modify the [CYBORG](https://arxiv.org/abs/2112.00686) loss function for leveraging human annotated feature maps for enhacing the inner features of the models.
 
 ### Conceptual Design
 The following repository contains an experiment for improving the accuracy of a calorie prediction from the image of food.
