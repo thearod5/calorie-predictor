@@ -4,7 +4,7 @@ from typing import Callable, List, Tuple
 import tensorflow as tf
 from tqdm import tqdm
 
-from constants import BATCH_SIZE, PROJECT_DIR
+from constants import BATCH_SIZE, N_EPOCHS, PROJECT_DIR
 from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
 from src.experiment.cam.cam_loss import CamLoss
 from src.experiment.cam.cam_state import CamState
@@ -71,7 +71,7 @@ class CamTrainer:
         message = " ".join([prefix, "Model Saved:", self.model_path])
         print(message)
 
-    def train(self, training_data: CamDatasetConverter, validation_data: tf.data.Dataset, n_epochs: int = 30,
+    def train(self, training_data: CamDatasetConverter, validation_data: tf.data.Dataset, n_epochs: int = N_EPOCHS,
               alpha_decay: float = .2) -> None:
         """
         Performs cam-training on data for some number of epochs.

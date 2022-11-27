@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from constants import CAM_PATH, DEFAULT_TURK_RESULTS
+from constants import DEFAULT_TURK_RESULTS, get_cam_path
 from src.datasets.abstract_dataset import AbstractDataset
 
 
@@ -32,7 +32,7 @@ class HMapCreator:
         For each batch represented by a result file, write bounding boxes as heat maps.
         :return: None
         """
-        export_dir = os.path.join(CAM_PATH, self.dataset_name)
+        export_dir = os.path.join(get_cam_path(), self.dataset_name)
         for batch_index, result_file_name in enumerate(self.result_file_names):
             batch_id = batch_index + 1
             print("Starting batch: %d / %d" % (batch_id, self.n_batches))
@@ -43,7 +43,7 @@ class HMapCreator:
         For each image in the dataset calculate and save the average heat map.
         :return: None
         """
-        dataset_path = os.path.join(CAM_PATH, self.dataset.dataset_path_creator.name)
+        dataset_path = os.path.join(get_cam_path(), self.dataset.dataset_path_creator.name)
         for image_name in self.dataset.get_image_names(with_extension=True):
             HMapCreator._save_avg_hmap_for_image(dataset_path, image_name)
 

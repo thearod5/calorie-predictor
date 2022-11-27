@@ -19,7 +19,7 @@ INPUT_SHAPE = IMAGE_SIZE + (N_CHANNELS,)
 BATCH_SIZE = 32
 EXT_SEP = "."
 TEST_SPLIT_SIZE = .20
-N_EPOCHS = 10
+N_EPOCHS = 50
 LOG_SKIPPED_ENTRIES = False
 MAXIMUM_BUFFER_SIZE = 20000
 LOG_CONFIG_FILE = os.path.join(PROJECT_DIR, 'logging_utils', 'logging.conf')
@@ -47,5 +47,8 @@ def set_data(test_env: str):
     ENV = test_env
 
 
-CAM_PATH = os.path.join(get_data_dir(), "cam")
+def get_cam_path():
+    return os.path.join(get_data_dir(), "cam")
+
+
 DEFAULT_TURK_RESULTS = os.path.join(PROJECT_DIR, "src/turk_task", "data")

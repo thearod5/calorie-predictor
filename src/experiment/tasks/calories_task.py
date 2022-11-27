@@ -2,7 +2,7 @@ import os
 
 import tensorflow as tf
 
-from constants import CAM_PATH, N_EPOCHS, TEST_SPLIT_SIZE
+from constants import N_EPOCHS, TEST_SPLIT_SIZE, get_cam_path
 from src.datasets.menu_match_dataset import MenuMatchDataset
 from src.datasets.nutrition_dataset import Mode, NutritionDataset
 from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
@@ -25,7 +25,7 @@ class CaloriePredictionTask(RegressionBaseTask):
         train = menu_match_dataset.split_to_train_test().pop()
         test, validation = nutrition_dataset.split_to_train_test(TEST_SPLIT_SIZE)
 
-        self.cam_path = os.path.join(CAM_PATH, menu_match_dataset.dataset_path_creator.name)
+        self.cam_path = os.path.join(get_cam_path(), menu_match_dataset.dataset_path_creator.name)
         self.use_cam = use_cam
         self.dataset = menu_match_dataset
         self._train = train
