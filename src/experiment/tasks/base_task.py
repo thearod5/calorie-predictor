@@ -180,7 +180,7 @@ class AbstractTask(ABC):
             verbose=1,
             save_best_only=True)
         training_data = self.get_training_data()
-        self.model.fit(self.augment_dataset(training_data),
+        self.model.fit(training_data,
                        epochs=self.n_epochs,
                        validation_data=self.get_validation_data(),
                        callbacks=[model_checkpoint_callback])
