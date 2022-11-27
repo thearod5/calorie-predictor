@@ -1,8 +1,11 @@
+import os
+
 import tensorflow as tf
 
-from constants import N_EPOCHS, TEST_SPLIT_SIZE
+from constants import CAM_PATH, N_EPOCHS, TEST_SPLIT_SIZE
 from datasets.menu_match_dataset import MenuMatchDataset
 from datasets.nutrition_dataset import Mode, NutritionDataset
+from experiment.cam.cam_dataset_converter import CamDatasetConverter
 from experiment.cam.cam_trainer import CamTrainer
 from experiment.models.managers.model_manager import ModelManager
 from experiment.tasks.regression_base_task import RegressionBaseTask
@@ -17,19 +20,23 @@ class CaloriePredictionTask(RegressionBaseTask):
         :param n_epochs: the number of epochs to run training for
         """
         super().__init__(model_manager, n_epochs=n_epochs, load_weights=False)
-        dataset = MenuMatchDataset()
-        train, validation = dataset.split_to_train_test(TEST_SPLIT_SIZE)
-        test_dataset = NutritionDataset(Mode.CALORIE)
+        menu_match_dataset = MenuMatchDataset()
+        nutrition_dataset = NutritionDataset(Mode.CALORIE)
+        train = menu_match_dataset.split_to_train_test().pop()
+        test, validation = nutrition_dataset.split_to_train_test(TEST_SPLIT_SIZE)
+
+        self.cam_path = os.path.join(CAM_PATH, menu_match_dataset.dataset_path_creator.name)
         self.use_cam = use_cam
-        self.dataset = dataset
+        self.dataset = menu_match_dataset
         self._train = train
         self._validation = validation
-        self._test = test_dataset.split_to_train_test().pop()
+        self._test = test
         self.trainer = CamTrainer(model_manager)
 
     def train(self):
         if self.use_cam:
-            self.trainer.train(self.dataset)
+            cam_dataset_converter = CamDatasetConverter(self.dataset, self.cam_path)
+            self.trainer.train(cam_dataset_converter, self._validation)
         else:
             super().train()
 
@@ -54,10 +61,10 @@ class CaloriePredictionTask(RegressionBaseTask):
         """
         return self._test
 
-    def get_eval_dataset(self, name: str) -> [str]:
+    def get_eval_dataset(self, name: str) -> tf.data.Dataset:
         """
         Gets the dataset to use for evaluation
         :param name: the name of the dataset
         :return: the dataset
         """
-        pass  # TODO
+        raise NotImplementedError("Don't know different between test or eval datasets - alberto.")

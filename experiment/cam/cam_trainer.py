@@ -1,156 +1,160 @@
-import json
 import os
+from typing import Callable, List, Tuple
 
 import tensorflow as tf
-import torch
-from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 from tqdm import tqdm
 
-from constants import CAM_PATH, get_data_dir
-from datasets.abstract_dataset import AbstractDataset
+from constants import BATCH_SIZE, PROJECT_DIR
 from experiment.cam.cam_dataset_converter import CamDatasetConverter
+from experiment.cam.cam_loss import CamLoss
+from experiment.cam.cam_state import CamState
+from experiment.metric_provider import MetricProvider
 from experiment.models.managers.model_manager import ModelManager
 
 
-class CamTrainerMetrics:
-    def __init__(self, epoch: int, log_path: str):
-        self.epoch = epoch
-        self.log_path = log_path
-        self.log = {'iterations': [], 'epoch': [], 'validation': [], 'train_acc': [], 'val_acc': []}
-        self.train_step = 0
-        self.accuracy = 0.
-        self.total = 0
-        self.c = 0
-        self.tloss = 0.
-
-    def get_train_loss(self):
-        return self.tloss / self.c
-
-    def get_accuracy(self):
-        return self.accuracy / self.total
-
-    def log_step_progress(self, loss):
-        self.log['iterations'].append(loss.item())
-        self.log['epoch'].append(self.tloss / self.c)
-        self.log['train_acc'].append(self.accuracy / self.total)
-        print('Epoch: ', self.epoch, 'Train loss: ', self.get_train_loss(), 'Accuracy: ', self.get_accuracy())
-
-    def save_log(self):
-        log_file_name = "epoch_log_%d.json" % self.epoch
-        log_export_path = os.path.join(self.log_path, log_file_name)
-        with open(log_export_path, 'w') as out:
-            json.dump(self.log, out)
-        print("Logged:", log_file_name)
-
-
 class CamTrainer:
-    def __init__(self, model_manager: ModelManager, alpha=0.5, lr=0.005, weight_decay=1e-6, momentum=0.9):
+    """
+    Trains a model on dataset containing human mappings.
+    """
+    CAM_TRAINER_PATH = os.path.join(PROJECT_DIR, "results", "checkpoints", "CamTrainer")
+
+    def __init__(self, model_manager: ModelManager, lr: float = 1e-4, weight_decay: float = 1e-6,
+                 momentum: float = 0.9, load_model=True, model_path: str = None):
+        """
+        Initializes trainer with model and training parameters.
+        :param model_manager: The manager of the model containing specification and builder.
+        :param lr: The learning rate.
+        :param weight_decay: The rate of decay of the optimizer.
+        :param momentum: Optimizer momentum.s
+        """
         self.model_manager = model_manager
         self.model = model_manager.get_model()
-        self.log_path = os.path.join(get_data_dir(), "logs")
-        self.base_cam_path = CAM_PATH
-        self.solver = None
-        self.criterion = tf.keras.losses.MeanSquaredError()
-        self.criterion_hmap = tf.keras.losses.MeanSquaredError()
-        self.alpha = alpha
+        self.model_path = os.path.join(self.CAM_TRAINER_PATH, self.model_manager.get_model_name())
         self.learning_rate = lr
-        self.weight_decay = weight_decay
-        self.momentum = momentum
+        self.metrics: List[Tuple[str, Callable]] = [("mae", MetricProvider.mean_absolute_error),
+                                                    ("avg_diff", MetricProvider.error_of_average)]
+        self.feature_model = model_manager.create_feature_model()
+        self.cam_state = CamState(self.model_path, BATCH_SIZE)
 
-    def get_solver(self):
-        if self.solver is None:
-            # missing weight decay
-            self.solver = tf.keras.optimizers.SGD(learning_rate=self.learning_rate, momentum=self.momentum)
-        return self.solver
+        assert os.path.exists(self.model_path), "Model path does not exists:" + self.model_path
 
-    def train(self, training_data: AbstractDataset, n_epochs=3, ):
-        cam_path = os.path.join(self.base_cam_path, training_data.dataset_path_creator.name)
-        cam_dataset = CamDatasetConverter(training_data, cam_path).convert()
+        self.save_or_load_model(load_model)
+
+    def save_or_load_model(self, load_model: bool) -> None:
+        """
+        Loads model from path or saves initialized model to path.
+        :param load_model: Whether to load model if it exists.
+        :type load_model:
+        :return: None
+        """
+        if not self.model_exists():
+            self.save_model()
+        elif load_model:
+            print("loading from model:", self.model_path)
+            self.model = tf.keras.models.load_model(self.model_path)
+
+    def model_exists(self) -> bool:
+        """
+        Returns whether current model exists in model path.
+        :return: Boolean representing existence of model.
+        """
+        check_path = os.path.join(self.model_path, "keras_metadata.pb")
+        return os.path.exists(check_path)
+
+    def save_model(self, prefix="") -> None:
+        """
+        Saves current model to model path.
+        :param prefix: Prefix to print before logging statement.
+        :return:None
+        """
+        self.model.save(self.model_path)
+        message = " ".join([prefix, "Model Saved:", self.model_path])
+        print(message)
+
+    def train(self, training_data: CamDatasetConverter, validation_data: tf.data.Dataset, n_epochs: int = 30,
+              alpha_decay: float = .2) -> None:
+        """
+        Performs cam-training on data for some number of epochs.
+        :param validation_data: The validation data to evaluate on.
+        :param training_data: The data to train on containing calorie counts and human maps.
+        :param n_epochs: The number of epochs to train for.
+        :param alpha_decay: The amount to decrease the alpha by incrementally across epochs.
+        :return: None
+        """
+
+        cam_dataset = training_data.convert()
+        cam_loss = CamLoss(self.feature_model, self.model_manager, n_epochs, alpha_decay)
 
         for epoch in range(1, n_epochs + 1):
-            metrics = CamTrainerMetrics(epoch, self.log_path)
-            self.perform_cam_epoch(cam_dataset, metrics)
+            self.perform_cam_epoch(cam_dataset, cam_loss, validation_data=validation_data)
+            self.cam_state.log_epoch(do_export=True)
+            cam_loss.finish_epoch()
 
-    def perform_cam_epoch(self, training_data, epoch_metrics: CamTrainerMetrics):
-        solver = self.get_solver()
-        train_loss = []
-        with torch.set_grad_enabled(True):
-            for batch_idx, (data, cals, hmap) in enumerate(tqdm(training_data)):
-                outputs = self.model(data)
+    def perform_cam_epoch(self, training_data, cam_loss: CamLoss,
+                          validation_data: tf.data.Dataset = None,
+                          evaluate_steps: int = 100, eval_metric="mae",
+                          metric_direction="lower") -> None:
+        """
+        Performs an epoch of cam training on data.
+        :param training_data: The data to train on.
+        :param cam_loss: The loss metric calculator.
+        :param metric_direction: The direction in which the eval metric gets better.
+        :param eval_metric: The metric to determine whether to save model.
+        :param evaluate_steps: The number of training steps to perform before evaluation.
+        :param validation_data: The data to evaluate on every n steps.
+        :return: None
+        """
 
-                # Prediction of accuracy
+        for batch_idx, (images, calories_expected, human_maps) in enumerate(tqdm(training_data)):
+            y_true = (calories_expected, human_maps)
+            self.perform_step(images, y_true, cam_loss)
 
-                # mse = tf.math.sqrt(((tf.cast(cals, tf.float32) - tf.cast(outputs, tf.float32)) ** 2))
-                # epoch_metrics.accuracy += mse
-                # epoch_metrics.total += data[0]
-                # cams = []
-                # for feature_index in range(n_features):
-                #     feature_map = features[:, :, feature_index]
-                #     feature_weight = feature_weights[feature_index]
-                #     cam_img = feature_map * feature_weight
-                #     cam_img = self.normalize(cam_img)
-                #     cams.append(cam_img)
-                # cams = tf.stack(cams)
+            if batch_idx > 0 and batch_idx % evaluate_steps == 0 and validation_data:
+                score = self.evaluate(validation_data)[eval_metric]
+                is_better = self.cam_state.log_eval(score, metric_direction)
+                if is_better:
+                    print("New Best Score:", score)
+                    self.save_model(prefix="New best!")
 
-                # 1. Get features  # TODO: Figure out why batch size is None
-                features = self.model_manager.get_feature_layer(self.model).output
-                feature_weights = self.model_manager.get_parameters()
-                batch_size, feature_height, feature_width, n_features = features.shape
-                features = tf.reshape(features, (feature_height, feature_width, n_features))
+    def perform_step(self, x, y_true: Tuple[tf.Tensor, tf.Tensor], cam_loss: CamLoss):
+        """
+        Performs an optimizer step on the model given datum.
+        :param x: The data to ask the model to predict.
+        :param y_true: The true values of the data.
+        :param cam_loss: The loss function manager.
+        :return:
+        """
+        with tf.GradientTape() as tape:
+            calories_predicted, feature_maps = self.feature_model(x, training=True)
+            y_pred = (calories_predicted, feature_maps)
+            calorie_loss, cam_loss, composite_loss = cam_loss.calculate_loss(y_pred, y_true)
 
-                # 2. Compute Sk model (weighted sum of the feature maps
-                weighted_features = tf.linalg.matmul(features, feature_weights)
-                weighted_features = self.normalize(weighted_features)
-                weighted_features = tf.convert_to_tensor(weighted_features)
+        # 4. Compute and apply gradient
+        grads = tape.gradient(composite_loss, self.feature_model.trainable_weights)
+        cam_loss.optimizer.apply_gradients(zip(grads, self.feature_model.trainable_weights))
 
-                # 3. Resize hmaps to feature size
-                hmap = tf.image.resize(hmap, (feature_width, feature_height))
+        calories_predicted_average = tf.math.reduce_mean(calories_predicted).numpy()
+        self.cam_state.log_step(composite_loss, calorie_loss, cam_loss, predicted_average=calories_predicted_average)
 
-                # 3. Compute class loss and feature map loss
-                class_loss = self.criterion(cals, outputs)
-                hmap_loss = self.criterion_hmap(hmap, weighted_features)
+    def evaluate(self, test_data: tf.data.Dataset):
+        """
+        Evaluates current model on test dataset using initialized metrics.
+        :param test_data: The dataset to evaluate on.
+        :return: Dictionary of metric names to their values.
+        """
+        calories_predicted = []
+        calories_expected = []
+        for batch_idx, (images, image_calories_expected) in enumerate(tqdm(test_data)):
+            calories_predicted_local = self.model.predict(images)
+            calories_predicted_local = tf.reshape(calories_predicted_local, (len(images)))
+            image_calories_expected = tf.reshape(image_calories_expected, len(images))
+            calories_predicted.extend(calories_predicted_local.numpy().tolist())
+            calories_expected.extend(image_calories_expected.numpy().tolist())
 
-                class_loss = tf.convert_to_tensor(class_loss)
-                hmap_loss = tf.convert_to_tensor(hmap_loss)
-
-                @tf.function
-                def loss_fn(a: float):
-                    alpha = tf.Variable(a, name="alpha")
-                    alpha_negated = tf.Variable(1 - a, name='bias')
-                    return tf.convert_to_tensor(alpha * class_loss + alpha_negated * hmap_loss)
-
-                # loss = self.alpha * class_loss + (1 - self.alpha) * hmap_loss
-                KerasTensor
-                var_list_fn = lambda: self.model.trainable_weights
-                opt_op = self.solver.minimize(loss_fn(self.alpha), var_list=var_list_fn)
-                opt_op.run()
-
-                # train_loss.append(epoch_metrics.tloss / epoch_metrics.c)
-                # epoch_metrics.train_step += 1
-                # epoch_metrics.tloss += loss.item()
-                # epoch_metrics.c += 1
-                # epoch_metrics.log_step_progress(loss)
-
-        epoch_metrics.save_log()
-        self.save_model(solver, epoch_metrics)
-
-    def save_model(self, solver, metrics: CamTrainerMetrics):
-        states = {
-            'epoch': metrics.epoch,
-            'state_dict': self.model.state_dict(),
-            'optimizer': solver.state_dict(),
-        }
-        torch.save(states, os.path.join(self.log_path, 'current_model.pth'))
-
-    @staticmethod
-    def normalize(tensor):
-        return tf.divide(
-            tf.subtract(
-                tensor,
-                tf.reduce_min(tensor)
-            ),
-            tf.subtract(
-                tf.reduce_max(tensor),
-                tf.reduce_min(tensor)
-            )
-        )
+        print("\naverage calories:", sum(calories_expected) / len(calories_expected))
+        print("average predicted:", sum(calories_predicted) / len(calories_predicted))
+        results = {}
+        for metric_name, metric in self.metrics:
+            metric_value = metric(calories_expected, calories_predicted)
+            results[metric_name] = metric_value
+        return results
