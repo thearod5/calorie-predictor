@@ -48,4 +48,4 @@ def set_data(test_env: str):
 
 
 CAM_PATH = os.path.join(get_data_dir(), "cam")
-DEFAULT_TURK_RESULTS = os.path.join(PROJECT_DIR, "turk_task", "data")
+DEFAULT_TURK_RESULTS = os.path.join(PROJECT_DIR, "src/turk_task", "data")
