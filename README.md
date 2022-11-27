@@ -29,7 +29,7 @@ In total, we use five different datasets containing images of food which are des
 | Name        | Training Data | Validation Data | Testing Data |
 | ----------- | -----------   | -----------     | ----------- |
 | Food Classification (Pre-training) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | N/A |
-| Mass Prediction (Pre-training) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) |
+| Mass Prediction (Pre-training) | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-)| [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) |
 | Calorie Prediction (Regular training) | [MenuMatch + Annotations](http://neelj.com/projects/menumatch/data/) | [MenuMatch + Annotations](http://neelj.com/projects/menumatch/data/) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) |
 
 ## WINTER 2022
