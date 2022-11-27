@@ -108,7 +108,9 @@ class HMapCreator:
             if not os.path.exists(hmap_path):
                 continue
 
-            hmap = cv2.imread(hmap_path) / 255.0
+            hmap = cv2.imread(hmap_path)
+            hmap = hmap / 255.0
+            hmap = cv2.GaussianBlur(hmap, (75, 75), cv2.BORDER_DEFAULT)
             avg_hmap = hmap if avg_hmap is None else avg_hmap + hmap
             n_batches += 1
         if avg_hmap is None:
