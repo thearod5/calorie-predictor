@@ -62,7 +62,10 @@ class CamState:
         self.n_steps += 1
         average_loss = self.total_calorie_loss / self.n_steps
         if do_print:
-            print("\nCurrent Error:", calorie_loss.numpy(), "\tAverage:", average_loss.numpy())
+            print("\rEpoch:", self.epoch,
+                  "\tStep:", self.n_steps,
+                  "\tCurrent Error:", calorie_loss.numpy(),
+                  "\tAverage:", average_loss.numpy())
         if do_export:
             self.export_log(**kwargs)
 
@@ -101,8 +104,9 @@ class CamState:
 
         if self.validation_score is None:
             self.validation_score = score
-
-        is_better = metric_direction(score, self.validation_score)
+            is_better = True
+        else:
+            is_better = metric_direction(score, self.validation_score)
 
         if is_better:
             self.validation_score = score

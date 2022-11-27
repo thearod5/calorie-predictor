@@ -19,7 +19,7 @@ class CamTrainer:
     CAM_TRAINER_PATH = os.path.join(PROJECT_DIR, "results", "checkpoints", "CamTrainer")
 
     def __init__(self, model_manager: ModelManager, lr: float = 1e-4, weight_decay: float = 1e-6,
-                 momentum: float = 0.9, load_model=True, model_path: str = None):
+                 momentum: float = 0.9, load_model=False, model_path: str = None):
         """
         Initializes trainer with model and training parameters.
         :param model_manager: The manager of the model containing specification and builder.
@@ -37,7 +37,6 @@ class CamTrainer:
         self.cam_state = CamState(self.model_path, BATCH_SIZE)
 
         assert os.path.exists(self.model_path), "Model path does not exists:" + self.model_path
-
         self.save_or_load_model(load_model)
 
     def save_or_load_model(self, load_model: bool) -> None:
@@ -92,7 +91,7 @@ class CamTrainer:
 
     def perform_cam_epoch(self, training_data, cam_loss: CamLoss,
                           validation_data: tf.data.Dataset = None,
-                          evaluate_steps: int = 100, eval_metric="mae",
+                          n_evaluations: int = 4, eval_metric="mae",
                           metric_direction="lower") -> None:
         """
         Performs an epoch of cam training on data.
@@ -100,21 +99,23 @@ class CamTrainer:
         :param cam_loss: The loss metric calculator.
         :param metric_direction: The direction in which the eval metric gets better.
         :param eval_metric: The metric to determine whether to save model.
-        :param evaluate_steps: The number of training steps to perform before evaluation.
+        :param n_evaluations: The number of evaluations to perform during single epoch.
         :param validation_data: The data to evaluate on every n steps.
         :return: None
         """
-
+        n_batches = len(training_data)
+        epoch_evaluation = int(n_batches / n_evaluations)
         for batch_idx, (images, calories_expected, human_maps) in enumerate(tqdm(training_data)):
             y_true = (calories_expected, human_maps)
             self.perform_step(images, y_true, cam_loss)
 
-            if batch_idx > 0 and batch_idx % evaluate_steps == 0 and validation_data:
+            if (batch_idx + 1) % epoch_evaluation == 0 and validation_data:
                 score = self.evaluate(validation_data)[eval_metric]
+                score = round(score, 2)
                 is_better = self.cam_state.log_eval(score, metric_direction)
                 if is_better:
-                    print("New Best Score:", score)
-                    self.save_model(prefix="New best!")
+                    message = "New Best Score:" + str(score)
+                    self.save_model(prefix=message)
 
     def perform_step(self, x, y_true: Tuple[tf.Tensor, tf.Tensor], cam_loss: CamLoss):
         """
@@ -143,17 +144,20 @@ class CamTrainer:
         :param test_data: The dataset to evaluate on.
         :return: Dictionary of metric names to their values.
         """
+        print("\nEvaluating...")
         calories_predicted = []
         calories_expected = []
-        for batch_idx, (images, image_calories_expected) in enumerate(tqdm(test_data)):
+        for batch_idx, (images, image_calories_expected) in enumerate(test_data):
             calories_predicted_local = self.model.predict(images)
             calories_predicted_local = tf.reshape(calories_predicted_local, (len(images)))
             image_calories_expected = tf.reshape(image_calories_expected, len(images))
             calories_predicted.extend(calories_predicted_local.numpy().tolist())
             calories_expected.extend(image_calories_expected.numpy().tolist())
 
-        print("\naverage calories:", sum(calories_expected) / len(calories_expected))
-        print("average predicted:", sum(calories_predicted) / len(calories_predicted))
+        average_calories = round(sum(calories_expected) / len(calories_expected), 2)
+        average_calories_predicted = round(sum(calories_predicted) / len(calories_predicted), 2)
+        print("Average Calories:\t", average_calories, "Average Predicted:\t", average_calories_predicted, "\n")
+
         results = {}
         for metric_name, metric in self.metrics:
             metric_value = metric(calories_expected, calories_predicted)

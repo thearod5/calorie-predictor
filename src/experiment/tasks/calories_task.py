@@ -22,8 +22,8 @@ class CaloriePredictionTask(RegressionBaseTask):
         super().__init__(model_manager, n_epochs=n_epochs, load_weights=False)
         menu_match_dataset = MenuMatchDataset()
         nutrition_dataset = NutritionDataset(Mode.CALORIE)
-        train = menu_match_dataset.split_to_train_test().pop()
-        test, validation = nutrition_dataset.split_to_train_test(TEST_SPLIT_SIZE)
+        train, validation = menu_match_dataset.split_to_train_test(TEST_SPLIT_SIZE)
+        test = nutrition_dataset.split_to_train_test().pop()
 
         self.cam_path = os.path.join(get_cam_path(), menu_match_dataset.dataset_path_creator.name)
         self.use_cam = use_cam

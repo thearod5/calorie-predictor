@@ -13,6 +13,7 @@ from constants import N_EPOCHS, get_data_dir
 from src.experiment.models.managers.model_managers import ModelManagers
 from src.experiment.tasks.base_task import logger, set_data, AbstractTask
 from src.experiment.tasks.task_identifiers import Tasks
+import tensorflow as tf
 
 warnings.filterwarnings("ignore")
 
@@ -45,6 +46,7 @@ if __name__ == "__main__":
 
     print("-" * 25)
     print(args)
+    print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
     # 2. Extract task and model
     set_data(data_env)

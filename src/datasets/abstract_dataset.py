@@ -180,5 +180,5 @@ class AbstractDataset:
             else:
                 unlabeled_images += 1
 
-        print(self.dataset_path_creator.name, "Labeled:", labeled_images, "Unlabeled:", unlabeled_images)
+        print(self.dataset_path_creator.name[:10], "\t(Labeled:", labeled_images, "\tUnlabeled:", unlabeled_images, ")")
         return labeled_image_paths
