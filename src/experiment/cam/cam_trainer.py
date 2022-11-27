@@ -127,14 +127,15 @@ class CamTrainer:
         with tf.GradientTape() as tape:
             calories_predicted, feature_maps = self.feature_model(x, training=True)
             y_pred = (calories_predicted, feature_maps)
-            calorie_loss, cam_loss, composite_loss = cam_loss.calculate_loss(y_pred, y_true)
+            calorie_loss, feature_loss, composite_loss = cam_loss.calculate_loss(y_pred, y_true)
 
         # 4. Compute and apply gradient
         grads = tape.gradient(composite_loss, self.feature_model.trainable_weights)
         cam_loss.optimizer.apply_gradients(zip(grads, self.feature_model.trainable_weights))
 
         calories_predicted_average = tf.math.reduce_mean(calories_predicted).numpy()
-        self.cam_state.log_step(composite_loss, calorie_loss, cam_loss, predicted_average=calories_predicted_average)
+        self.cam_state.log_step(composite_loss, calorie_loss, feature_loss,
+                                predicted_average=calories_predicted_average)
 
     def evaluate(self, test_data: tf.data.Dataset):
         """

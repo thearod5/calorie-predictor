@@ -43,11 +43,11 @@ class CamState:
             self.logger.load()
             self.load_log(self.logger.logs[-1])
 
-    def log_step(self, composite_loss: float, calorie_loss: float, hmap_loss: float, do_export: bool = True,
+    def log_step(self, composite_loss: float, calorie_loss: float, feature_losss: float, do_export: bool = True,
                  do_print: bool = True, **kwargs):
         """
         Records the composite and class losses in aggregate tallies.
-        :param hmap_loss: The loss of between the model's features and human maps.
+        :param feature_losss: The loss of between the model's features and human maps.
         :param composite_loss: The combine class and hmap loss.
         :param calorie_loss: The loss of the calorie predictions.
         :param do_export: Whether to export current log.
@@ -56,7 +56,7 @@ class CamState:
         """
         self.total_composite_loss += composite_loss
         self.total_calorie_loss += calorie_loss
-        self.total_hmap_loss += hmap_loss
+        self.total_hmap_loss += feature_losss
         self.n_images += self.batch_size
         self.composite_losses.append(composite_loss)
         self.n_steps += 1
