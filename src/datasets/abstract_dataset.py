@@ -170,12 +170,15 @@ class AbstractDataset:
         """
         labeled_image_paths = []
         unlabeled_images = 0
+        labeled_images = 0
         for image_path in image_paths:
             image_name = self.get_name_from_path(image_path)
             label = self.get_label(image_name)
             if label is not None:
+                labeled_images += 1
                 labeled_image_paths.append(image_path)
             else:
                 unlabeled_images += 1
-        print("Unlabeled images:", unlabeled_images)
+
+        print(self.dataset_path_creator.name, "Labeled:", labeled_images, "Unlabeled:", unlabeled_images)
         return labeled_image_paths
