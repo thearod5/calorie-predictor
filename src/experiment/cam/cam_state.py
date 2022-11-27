@@ -43,7 +43,8 @@ class CamState:
             self.logger.load()
             self.load_log(self.logger.logs[-1])
 
-    def log_step(self, composite_loss: float, calorie_loss: float, feature_losss: float, do_export: bool = True,
+    def log_step(self, composite_loss: float, calorie_loss: float, feature_losss: float, alpha: float,
+                 do_export: bool = True,
                  do_print: bool = True, **kwargs):
         """
         Records the composite and class losses in aggregate tallies.
@@ -65,7 +66,8 @@ class CamState:
             print("\rEpoch:", self.epoch,
                   "\tStep:", self.n_steps,
                   "\tCurrent Error:", calorie_loss.numpy(),
-                  "\tAverage:", average_loss.numpy())
+                  "\tAverage:", average_loss.numpy(),
+                  "\tAlpha:", alpha)
         if do_export:
             self.export_log(**kwargs)
 
