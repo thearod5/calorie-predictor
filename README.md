@@ -1,6 +1,7 @@
 # Calorie Predictor
 
-## FALL 2022 
+## Summary
+The following report describes an experiment examining the performance of popular CNNs on a the calorie prediction task. The baseline method uses ResNet, Xception, and other CNNS to train directly on this task. Our first experimental condition pre-trains a model on a food classification task before the downstream calorie prediction task. Lastly, we modify the [CYBORG](https://arxiv.org/abs/2112.00686) loss function for leveraging human annotated feature maps for enhacing the inner features of the models.
 
 ### Conceptual Design
 The following repository contains an experiment for improving the accuracy of a calorie prediction from the image of food.
@@ -28,7 +29,7 @@ In total, we use five different datasets containing images of food which are des
 | Name        | Training Data | Validation Data | Testing Data |
 | ----------- | -----------   | -----------     | ----------- |
 | Food Classification (Pre-training) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | [Food-101](https://kaggle.com/kmader/food41); [UNIMB2016](http://www.ivl.disco.unimib.it/activities/food-recognition/) | N/A |
-| Mass Prediction (Pre-training) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) |
+| Mass Prediction (Pre-training) | [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-)| [ECUST Food Dataset](https://github.com/Liang-yc/ECUSTFD-resized-) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) |
 | Calorie Prediction (Regular training) | [MenuMatch + Annotations](http://neelj.com/projects/menumatch/data/) | [MenuMatch + Annotations](http://neelj.com/projects/menumatch/data/) | [Nutrition 5k](https://github.com/google-research-datasets/Nutrition5k#download-data) |
 
 ## WINTER 2022
