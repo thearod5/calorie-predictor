@@ -150,7 +150,7 @@ class AbstractDataset:
         :return: the two dataset splits
         """
         test_split_size = int(image_count * test_split_size)
-        return dataset.take(image_count - test_split_size), dataset.skip(test_split_size)
+        return dataset.take(test_split_size), dataset.skip(test_split_size)
 
     @staticmethod
     def prepare_dataset(dataset: tf.data.Dataset) -> tf.data.Dataset:
