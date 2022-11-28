@@ -110,7 +110,7 @@ class CamTrainer:
             self.perform_step(images, y_true, cam_loss)
 
             if (batch_idx + 1) % epoch_evaluation == 0 and validation_data:
-                score = self.evaluate(validation_data)[eval_metric]
+                score = self.perform_evaluation(validation_data, use_tqdm=False)[eval_metric]
                 score = round(score, 2)
                 is_better = self.cam_logger.log_eval(score, metric_direction)
                 if is_better:
@@ -138,16 +138,18 @@ class CamTrainer:
         self.cam_logger.log_step(composite_loss, calorie_loss, feature_loss, cam_loss.alpha,
                                  predicted_average=calories_predicted_average)
 
-    def evaluate(self, test_data: tf.data.Dataset):
+    def perform_evaluation(self, test_data: tf.data.Dataset, use_tqdm: bool = True):
         """
         Evaluates current model on test dataset using initialized metrics.
         :param test_data: The dataset to evaluate on.
+        :param use_tqdm: Whether to use the tqdm iterator which logs each iteration.
         :return: Dictionary of metric names to their values.
         """
         print("\nEvaluating...")
         calories_predicted = []
         calories_expected = []
-        for batch_idx, (images, image_calories_expected) in enumerate(test_data):
+        test_data_iterator = tqdm(test_data) if use_tqdm else test_data
+        for batch_idx, (images, image_calories_expected) in enumerate(test_data_iterator):
             calories_predicted_local = self.model.predict(images)
             calories_predicted_local = tf.reshape(calories_predicted_local, (len(images)))
             image_calories_expected = tf.reshape(image_calories_expected, len(images))
