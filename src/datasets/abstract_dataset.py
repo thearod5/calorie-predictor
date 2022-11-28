@@ -107,7 +107,7 @@ class AbstractDataset:
         labels = self.get_labels_dataset()
         ds = tf.data.Dataset.zip((images, labels))
         if shuffle:
-            ds = ds.shuffle(buffer_size=image_count, seed=RANDOM_SEED)
+            ds = ds.shuffle(buffer_size=10000, seed=RANDOM_SEED)
         return ds
 
     @staticmethod
