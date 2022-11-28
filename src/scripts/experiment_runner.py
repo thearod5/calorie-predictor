@@ -33,6 +33,7 @@ def get_args():
     parser.add_argument('--data', choices=["test", "prod"], default="prod")
     parser.add_argument('--dataset', default=None)
     parser.add_argument('--cam', dest='cam', default=False, action='store_true')
+    parser.add_argument('--mode', choices=["train", "eval", "traineval"], default="traineval")
 
     return parser.parse_args()
 
@@ -43,6 +44,7 @@ if __name__ == "__main__":
     task_name = args.task
     model_manager_name = args.model
     use_cam = args.cam
+    mode = args.mode
 
     print("-" * 25)
     print(args)
@@ -63,5 +65,8 @@ if __name__ == "__main__":
 
     # 4. Train then evaluate
     logger.info("Data Env: %s" % data_env)
-    task.train()
-    task.eval()
+    if "train" in mode:
+        task.train()
+    if "eval" in mode:
+        task: AbstractTask = task_selected.value(model_manager, n_epochs=N_EPOCHS, **kwargs)  # TODO: Temp fix for eval
+        task.eval()

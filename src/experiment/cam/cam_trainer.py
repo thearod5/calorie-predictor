@@ -6,8 +6,8 @@ from tqdm import tqdm
 
 from constants import BATCH_SIZE, N_EPOCHS, PROJECT_DIR
 from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
+from src.experiment.cam.cam_logger import CamLogger
 from src.experiment.cam.cam_loss import CamLoss
-from src.experiment.cam.cam_state import CamState
 from src.experiment.metric_provider import MetricProvider
 from src.experiment.models.managers.model_manager import ModelManager
 
@@ -34,7 +34,7 @@ class CamTrainer:
         self.metrics: List[Tuple[str, Callable]] = [("mae", MetricProvider.mean_absolute_error),
                                                     ("avg_diff", MetricProvider.error_of_average)]
         self.feature_model = model_manager.create_feature_model()
-        self.cam_state = CamState(self.model_path, BATCH_SIZE)
+        self.cam_logger = CamLogger(self.model_path, BATCH_SIZE)
 
         assert os.path.exists(self.model_path), "Model path does not exists:" + self.model_path
         self.save_or_load_model(load_model)
@@ -86,7 +86,7 @@ class CamTrainer:
 
         for epoch in range(1, n_epochs + 1):
             self.perform_cam_epoch(cam_dataset, cam_loss, validation_data=validation_data)
-            self.cam_state.log_epoch(do_export=True)
+            self.cam_logger.log_epoch(do_export=True)
             cam_loss.finish_epoch()
 
     def perform_cam_epoch(self, training_data, cam_loss: CamLoss,
@@ -112,7 +112,7 @@ class CamTrainer:
             if (batch_idx + 1) % epoch_evaluation == 0 and validation_data:
                 score = self.evaluate(validation_data)[eval_metric]
                 score = round(score, 2)
-                is_better = self.cam_state.log_eval(score, metric_direction)
+                is_better = self.cam_logger.log_eval(score, metric_direction)
                 if is_better:
                     message = "New Best Score:" + str(score)
                     self.save_model(prefix=message)
@@ -135,8 +135,8 @@ class CamTrainer:
         cam_loss.optimizer.apply_gradients(zip(grads, self.feature_model.trainable_weights))
 
         calories_predicted_average = tf.math.reduce_mean(calories_predicted).numpy()
-        self.cam_state.log_step(composite_loss, calorie_loss, feature_loss, cam_loss.alpha,
-                                predicted_average=calories_predicted_average)
+        self.cam_logger.log_step(composite_loss, calorie_loss, feature_loss, cam_loss.alpha,
+                                 predicted_average=calories_predicted_average)
 
     def evaluate(self, test_data: tf.data.Dataset):
         """
