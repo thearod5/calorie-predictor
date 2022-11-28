@@ -135,7 +135,7 @@ class CamTrainer:
         cam_loss.optimizer.apply_gradients(zip(grads, self.feature_model.trainable_weights))
 
         calories_predicted_average = tf.math.reduce_mean(calories_predicted).numpy()
-        self.cam_logger.log_step(composite_loss, calorie_loss, feature_loss, cam_loss.alpha,
+        self.cam_logger.log_step(composite_loss, calorie_loss, feature_loss, cam_loss.get_alpha(),
                                  predicted_average=calories_predicted_average)
 
     def perform_evaluation(self, test_data: tf.data.Dataset, use_tqdm: bool = True):

@@ -3,6 +3,7 @@ from typing import Tuple
 import tensorflow as tf
 
 from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
+from src.experiment.cam.cam_loss_alpha import CamLossAlpha
 from src.experiment.models.managers.model_manager import ModelManager
 
 
@@ -12,17 +13,13 @@ class CamLoss:
     """
 
     def __init__(self, feature_model: tf.keras.Model, model_manager: ModelManager, total_epochs: int,
-                 alpha_decay: float):
+                 alpha: float = None, alpha_decay: float = None):
         self.feature_model = feature_model
         self.model_manager = model_manager
         self.criterion = tf.keras.losses.MeanSquaredError()
         self.criterion_hmap = tf.keras.losses.MeanSquaredError()
-        self.alpha = 1
-        self.alpha_decay = alpha_decay
-        self.n_alpha_steps = 1 / alpha_decay
-        self.n_alpha_updates = int(total_epochs / self.n_alpha_steps)
-        self.n_epochs = 1
         self.optimizer = self.create_optimizer()
+        self.cam_loss_alpha = CamLossAlpha(total_epochs, alpha=alpha, alpha_decay=alpha_decay)
 
     @staticmethod
     def create_optimizer():
@@ -36,10 +33,8 @@ class CamLoss:
         Records new epoch and updates alpha.
         :return: None
         """
-        self.n_epochs += 1
-        if self.n_epochs % self.n_alpha_updates == 0:
-            self.alpha -= self.alpha_decay
-            self.alpha = round(self.alpha, 2)
+        alpha_update = self.cam_loss_alpha.perform_alpha_step()
+        if alpha_update:
             self.optimizer = self.create_optimizer()
 
     @staticmethod
@@ -84,8 +79,12 @@ class CamLoss:
         cam_loss = self.criterion_hmap(hmaps, cams)
 
         # 3. Calculate composite loss
-        composite_loss = (self.alpha * calorie_loss) + ((1 - self.alpha) * cam_loss * calorie_loss)
+        alpha = self.get_alpha()
+        composite_loss = (alpha * calorie_loss) + ((1 - alpha) * cam_loss * calorie_loss)
         assert not tf.math.is_nan(composite_loss), "Composite loss is NAN."
         losses = calorie_loss, cam_loss, composite_loss
         losses = [tf.math.sqrt(loss) for loss in losses]
         return losses
+
+    def get_alpha(self):
+        return self.cam_loss_alpha.alpha
