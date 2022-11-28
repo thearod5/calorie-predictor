@@ -13,7 +13,7 @@ from src.experiment.tasks.regression_base_task import RegressionBaseTask
 
 class CaloriePredictionTask(RegressionBaseTask):
 
-    def __init__(self, model_manager: ModelManager, n_epochs=N_EPOCHS, use_cam=False):
+    def __init__(self, model_manager: ModelManager, n_epochs=N_EPOCHS, use_cam=False, **cam_args):
         """
         Represents a Calorie Prediction Task
         :param model_manager: the model to use for the task
@@ -31,7 +31,7 @@ class CaloriePredictionTask(RegressionBaseTask):
         self._train = train
         self._validation = validation
         self._test = test
-        self.trainer = CamTrainer(model_manager)
+        self.trainer = CamTrainer(model_manager, **cam_args)
 
     def train(self):
         if self.use_cam:

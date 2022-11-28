@@ -1,24 +1,16 @@
-from typing import Callable, Dict, List
+from typing import Dict
 
 import numpy as np
 import tensorflow as tf
 
 from constants import CLASSIFICATION_DATASETS, N_EPOCHS, TEST_SPLIT_SIZE
-from src.datasets.abstract_dataset import AbstractDataset
 from src.datasets.food_images_dataset import FoodImagesDataset
-from src.datasets.nutrition_dataset import Mode, NutritionDataset
-from src.datasets.unimib_dataset import UnimibDataset
 from src.experiment.Food2Index import Food2Index
 from src.experiment.models.managers.model_manager import ModelManager
 from src.experiment.tasks.classification_base_task import ClassificationBaseTask
 
 
 class FoodClassificationTask(ClassificationBaseTask):
-    dataset_constructors: Dict[str, Callable[[], AbstractDataset]] = {
-        "unimib": lambda: UnimibDataset(),
-        "food_images": lambda: FoodImagesDataset(),
-        "nutrition5k": lambda: NutritionDataset(mode=Mode.INGREDIENTS)
-    }
 
     def __init__(self, model_manager: ModelManager, n_epochs=N_EPOCHS,
                  training_datasets: [str] = CLASSIFICATION_DATASETS):
@@ -29,14 +21,7 @@ class FoodClassificationTask(ClassificationBaseTask):
          :param training_datasets: datasets to use for training
          """
         super().__init__(model_manager, n_outputs=len(Food2Index()), n_epochs=n_epochs)
-        datasets = self.get_datasets(training_datasets)
-        dataset, image_count = self.combine_datasets(datasets)
-        d_splits = list(
-            map(AbstractDataset.prepare_dataset,
-                AbstractDataset.split_dataset(dataset.get_dataset(), image_count, TEST_SPLIT_SIZE)))
-        train, validation = d_splits[0], d_splits[1]
-        self._train = train
-        self._validation = validation
+        self._train, self._validation = FoodImagesDataset().split_to_train_test(TEST_SPLIT_SIZE)
         self._test = None
 
     def get_eval_dataset(self, name: str) -> tf.data.Dataset:
@@ -45,17 +30,7 @@ class FoodClassificationTask(ClassificationBaseTask):
         :param name: the name of the dataset
         :return: the dataset
         """
-        if name not in self.dataset_constructors:
-            raise Exception("%s is not one of %s" % (name, ", ".join(self.dataset_constructors.keys())))
-        return AbstractDataset.prepare_dataset(self.dataset_constructors[name]().get_dataset(shuffle=False))
-
-    def get_datasets(self, dataset_names: List[str]) -> [AbstractDataset]:
-        """
-                Gets the dataset objects from a list of their names
-                :param dataset_names: a list of the names of the datasets to get
-                :return: a list of datasets
-                """
-        return [self.dataset_constructors[d_name]() for d_name in self.dataset_constructors if d_name in dataset_names]
+        raise ValueError("Evaluation is not defined for food classification due to conflicting classes.")
 
     def get_training_data(self) -> tf.data.Dataset:
         """
