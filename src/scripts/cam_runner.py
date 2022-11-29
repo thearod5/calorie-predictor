@@ -59,7 +59,7 @@ if __name__ == "__main__":
         model_manager_params = {}
         if args.model:
             model_name = args.model
-            checkpoint_name = None
+            checkpoint_name = "baseline"
         else:
             assert args.path is not None, "Expected model or model_path to be defined."
             assert "-" in args.path
