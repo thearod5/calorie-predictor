@@ -130,7 +130,8 @@ class NutritionDataset(AbstractDataset):
         for ingredient_index in range(1, int(n_ingredients)):
             ingredient_name_index = ingredient_index * NutritionDataset.num_features
             ingredient_name = row[ingredient_name_index]
-            self.food2index.add(ingredient_name)
+            if self._mode == Mode.INGREDIENTS:
+                self.food2index.add(ingredient_name)
             dish_ingredients.append(ingredient_name)
 
         # 3. Create dish and save

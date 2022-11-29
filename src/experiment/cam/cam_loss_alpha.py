@@ -12,6 +12,7 @@ class CamLossAlpha:
         self.n_epochs = 1
         if alpha_strategy == AlphaStrategy.CONSTANT:
             self.alpha = .5
+            self.alpha_decay = None
         else:
             self.alpha = 1
             self.alpha_decay = alpha_decay
