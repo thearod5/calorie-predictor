@@ -4,9 +4,7 @@ import sys
 import warnings
 from enum import Enum
 
-from src.experiment.cam.cam_loss_alpha import AlphaStrategy
-from src.experiment.models.checkpoint_creator import get_checkpoint_path
-from src.experiment.tasks.task_identifiers import Tasks
+import tensorflow as tf
 
 # makes this runnable from command line
 
@@ -16,8 +14,11 @@ sys.path.append(path_to_src)
 from constants import N_EPOCHS, get_data_dir
 from src.experiment.models.managers.model_managers import ModelManagers
 from src.experiment.tasks.base_task import AbstractTask, logger, set_data
-import tensorflow as tf
+
 from src.experiment.tasks.calories_task import CaloriePredictionTask
+from src.experiment.cam.cam_loss_alpha import AlphaStrategy
+from src.experiment.models.checkpoint_creator import get_checkpoint_path
+from src.experiment.tasks.task_identifiers import Tasks
 
 warnings.filterwarnings("ignore")
 
