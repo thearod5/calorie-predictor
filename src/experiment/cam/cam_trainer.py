@@ -8,7 +8,9 @@ from constants import BATCH_SIZE, N_EPOCHS, PROJECT_DIR
 from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
 from src.experiment.cam.cam_logger import CamLogger
 from src.experiment.cam.cam_loss import CamLoss
+from src.experiment.cam.cam_loss_alpha import AlphaStrategy
 from src.experiment.metric_provider import MetricProvider
+from src.experiment.models.checkpoint_creator import get_checkpoint_path
 from src.experiment.models.managers.model_manager import ModelManager
 
 
@@ -19,46 +21,26 @@ class CamTrainer:
     CAM_TRAINER_PATH = os.path.join(PROJECT_DIR, "results", "checkpoints", "CamTrainer")
 
     def __init__(self, model_manager: ModelManager, lr: float = 1e-4, weight_decay: float = 1e-6,
-                 momentum: float = 0.9, load_model=False, model_path: str = None):
+                 momentum: float = 0.9, checkpoint_name: str = None):
         """
         Initializes trainer with model and training parameters.
         :param model_manager: The manager of the model containing specification and builder.
         :param lr: The learning rate.
         :param weight_decay: The rate of decay of the optimizer.
         :param momentum: Optimizer momentum.s
+        :param checkpoint_name: The name of the subdirectory inside of task checkpoints.
         """
         self.model_manager = model_manager
         self.model = model_manager.get_model()
-        self.model_path = os.path.join(self.CAM_TRAINER_PATH, self.model_manager.get_model_name())
+        self.model_path = get_checkpoint_path(self.CAM_TRAINER_PATH, self.model_manager.get_model_name(),
+                                              checkpoint_name=checkpoint_name)
         self.learning_rate = lr
         self.metrics: List[Tuple[str, Callable]] = [("mae", MetricProvider.mean_absolute_error),
                                                     ("avg_diff", MetricProvider.error_of_average)]
-        self.feature_model = model_manager.create_feature_model()
+        self.feature_model = model_manager.get_feature_model()
         self.cam_logger = CamLogger(self.model_path, BATCH_SIZE)
-
-        assert os.path.exists(self.model_path), "Model path does not exists:" + self.model_path
-        self.save_or_load_model(load_model)
-
-    def save_or_load_model(self, load_model: bool) -> None:
-        """
-        Loads model from path or saves initialized model to path.
-        :param load_model: Whether to load model if it exists.
-        :type load_model:
-        :return: None
-        """
-        if not self.model_exists():
-            self.save_model()
-        elif load_model:
-            print("loading from model:", self.model_path)
-            self.model = tf.keras.models.load_model(self.model_path)
-
-    def model_exists(self) -> bool:
-        """
-        Returns whether current model exists in model path.
-        :return: Boolean representing existence of model.
-        """
-        check_path = os.path.join(self.model_path, "keras_metadata.pb")
-        return os.path.exists(check_path)
+        os.makedirs(self.model_path, exist_ok=True)
+        print("Saving model to:", self.model_path)
 
     def save_model(self, prefix="") -> None:
         """
@@ -71,18 +53,18 @@ class CamTrainer:
         print(message)
 
     def train(self, training_data: CamDatasetConverter, validation_data: tf.data.Dataset, n_epochs: int = N_EPOCHS,
-              alpha_decay: float = .2) -> None:
+              alpha_strategy: AlphaStrategy = AlphaStrategy.ADAPTIVE) -> None:
         """
         Performs cam-training on data for some number of epochs.
         :param validation_data: The validation data to evaluate on.
         :param training_data: The data to train on containing calorie counts and human maps.
         :param n_epochs: The number of epochs to train for.
-        :param alpha_decay: The amount to decrease the alpha by incrementally across epochs.
+        :param alpha_strategy: The type of strategy to use for adjusting the alpha value.
         :return: None
         """
 
         cam_dataset = training_data.convert()
-        cam_loss = CamLoss(self.feature_model, self.model_manager, n_epochs, alpha_decay)
+        cam_loss = CamLoss(self.feature_model, self.model_manager, n_epochs, alpha_strategy=alpha_strategy)
 
         for epoch in range(1, n_epochs + 1):
             self.perform_cam_epoch(cam_dataset, cam_loss, validation_data=validation_data)

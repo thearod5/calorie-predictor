@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Tuple
 
+import keras
 import tensorflow as tf
 from keras import Model
 from keras.layers import Dense, Dropout
@@ -11,30 +12,30 @@ from src.experiment.tasks.task_type import TaskType
 
 
 class ModelManager(ABC):
-    def __init__(self):
+    def __init__(self, model_path: str = None):
         self.__model = None
+        self.__feature_model = None
         self.activation = {}
-
-    def create_feature_model(self) -> tf.keras.Model:
-        """
-        Returns new model that outputs feature map in addition to model output.
-        :return: New keras model reference base model.
-        """
-        model = self.get_model()
-        layer_outputs = self.get_feature_layer(model).output
-        return Model(inputs=model.input, outputs=[model.output, layer_outputs])
+        self.model_path = model_path
 
     def get_model(self) -> Model:
+        """
+        :return: Returns the constructed model.
+        """
         if self.__model is None:
             raise Exception("Model has not been constructed.")
         return self.__model
 
-    def get_features(self):
+    def get_feature_model(self) -> tf.keras.Model:
         """
-        Returns the features associated with the last run on the model
-        :return: The output of the feature layer of layer run.
+        Returns new model that outputs feature map in addition to model output.
+        :return: New keras model reference base model.
         """
-        return self.activation["features"]
+        if self.__feature_model is None:
+            model = self.get_model()
+            layer_outputs = self.get_feature_layer(model).output
+            self.__feature_model = Model(inputs=model.input, outputs=[model.output, layer_outputs])
+        return self.__feature_model
 
     def create_model(self, task: Tuple[TaskType, str], n_outputs: int, pre_trained_model=True) -> Model:
         """
@@ -46,8 +47,9 @@ class ModelManager(ABC):
 
             # 1. Create model
             base_model = self.__create_base_model(pre_trained_model)
-            model_name = "_".join([self.get_model_name(), task_name])
             output_layer = self.__add_output_head(base_model, task, n_outputs)
+
+            model_name = "_".join([self.get_model_name(), task_name])
             model = tf.keras.Model(inputs=base_model.input, outputs=output_layer, name=model_name)
 
             self.__model = model
@@ -56,16 +58,47 @@ class ModelManager(ABC):
     def __create_base_model(self, is_pretrained: bool):
         """
         Creates the base model for given task.
-        :param is_pretrained: Whether to load image_namepre-trained weights.
-        :return:
+        :param is_pretrained: Whether to load image_name pre-trained weights.
         :rtype:
         """
         base_model_class = self.get_model_constructor()
+        if self.model_path:
+            return self.load_previous_model(self.model_path, remove_last_layer=True)
         if is_pretrained:
-            base_model_obj = self.create_pre_trained_model(base_model_class)
+            return self.create_pre_trained_model(base_model_class)
+        return base_model_class()
+
+    def __add_output_head(self, base_model: Model, task: Tuple[TaskType, str], n_outputs: int):
+        """
+        Adds task-specific set of layers to base model.
+        :param base_model: The base model to attach layers to.
+        :param n_outputs: The final number of outputs.
+        :param task: The task being performed
+        :return:
+        """
+        output_layer_name = "_".join(["output", self.get_model_name(), task[1]])
+        output_layer = base_model.output
+        if task[0] == TaskType.CLASSIFICATION:
+            output_activation = "softmax"
+            output_layer = self.append_hidden_layer(base_model)
         else:
-            base_model_obj = base_model_class()
-        return base_model_obj
+            output_activation = "linear"
+        return tf.keras.layers.Dense(n_outputs,
+                                     name=output_layer_name,
+                                     activation=output_activation)(output_layer)
+
+    def load_previous_model(self, model_path: str, remove_last_layer: bool = True) -> Model:
+        """
+        Loads model at given model path with autoloader.
+        :param model_path: The path to the model weights and configuration.
+        :param remove_last_layer: Whether to remove the last layer of the model.
+        :return: Keras.Model
+        """
+        print("Loading model checkpoint:", model_path)
+        previous_model: Model = tf.keras.models.load_model(self.model_path)
+        if remove_last_layer:
+            return keras.Model(inputs=previous_model.input, outputs=previous_model.layers[-2].output)
+        return previous_model
 
     @staticmethod
     def create_pre_trained_model(base_model_class: Callable[..., Model], weights: str = "imagenet", include_top=False,
@@ -90,26 +123,6 @@ class ModelManager(ABC):
         )
 
         return base_model_obj
-
-    def __add_output_head(self, base_model: Model, task: Tuple[TaskType, str], n_outputs: int):
-        """
-        Adds task-specific set of layers to base model.
-        TODO: Infer n_outputs by task
-        :param base_model: The base model to attach layers to.
-        :param n_outputs: The final number of outputs.
-        :param task: The task being performed
-        :return:
-        """
-        output_layer_name = "_".join(["output", self.get_model_name(), task[1]])
-        output_layer = base_model.output
-        if task[0] == TaskType.CLASSIFICATION:
-            output_activation = "softmax"
-            output_layer = self.append_hidden_layer(base_model)
-        else:
-            output_activation = "linear"
-        return tf.keras.layers.Dense(n_outputs,
-                                     name=output_layer_name,
-                                     activation=output_activation)(output_layer)
 
     @staticmethod
     def append_hidden_layer(base_model, hidden_size: int = 2048, activation: str = "relu",

@@ -17,18 +17,14 @@ class RegressionBaseTask(AbstractTask, ABC):
     metric = "mae"
     task_mode = "min"
 
-    def __init__(self, model_manager: ModelManager, n_outputs=1, n_epochs=N_EPOCHS, load_weights=True,
-                 load_on_init=True):
+    def __init__(self, model_manager: ModelManager, n_outputs=1, n_epochs=N_EPOCHS):
         """
         Represents a Regression Tasks
         :param model_manager: the model to use for the task
         :param n_outputs: the number of nodes for the output layer
         :param n_epochs: the number of epochs to run training for
-        :param load_weights: if True, loads existing weights
-        :param load_on_init: if True, loads the model in task __init__
         """
-        super().__init__(model_manager, n_outputs, n_epochs, load_weights=load_weights,
-                         load_on_init=load_on_init)
+        super().__init__(model_manager, n_outputs, n_epochs)
 
     def eval(self, _=None):
         """

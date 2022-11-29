@@ -45,23 +45,18 @@ augmentation_generator = ImageDataGenerator(rotation_range=15,
 
 
 class AbstractTask(ABC):
-    def __init__(self, model_manager: ModelManager, n_outputs: int = 1, n_epochs: int = N_EPOCHS,
-                 load_weights: bool = True,
-                 load_on_init: bool = True):
+    def __init__(self, model_manager: ModelManager, n_outputs: int = 1, n_epochs: int = N_EPOCHS):
         """
         Represents a task for the model
         :param model_manager: the model to use for the task
         :param n_outputs: the number of nodes for the output layer
         :param n_epochs: the number of epochs to run training for
-        :param load_weights: if True, loads existing weights
-        :param load_on_init: if True, loads the model in task __init__
         """
         section_heading = "Run Settings"
         task_name = self.__class__.__name__
         logger.info(format_header(section_heading))
         logger.info("Task: " + task_name)
 
-        self.load_weights = load_weights
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
 
@@ -70,8 +65,6 @@ class AbstractTask(ABC):
         self.model = model_manager.create_model((self.task_type, task_name), n_outputs=n_outputs,
                                                 pre_trained_model=is_pretrained)
         self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, self.model_manager.get_model_name())
-        if load_on_init:
-            self.load_model()
         logger.info(get_section_break(section_heading))
 
     @property
@@ -152,26 +145,14 @@ class AbstractTask(ABC):
         """
         pass
 
-    def load_model(self):
-        """
-        Handles loading the model weights and/or compiling
-        :return: None
-        """
-        if self.load_weights and os.path.isdir(os.path.dirname(self.checkpoint_path)):
-            self.model = tf.keras.models.load_model(self.checkpoint_path)
-            weights = "Previous best on validation"
-        else:
-            self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
-            weights = "ImageNet"
-        logger.info(format_name_val_info("Model", self.model_manager.get_model_name()))
-        logger.info(format_name_val_info("Weights", weights))
-
     def train(self):
         """
         Trains the model
         :return: None
         """
+        self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
         logger.info(format_header("Training"))
+        logger.info(format_name_val_info("Model", self.model_manager.get_model_name()))
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
             filepath=self.checkpoint_path,
@@ -225,7 +206,7 @@ class AbstractTask(ABC):
         Increments the entry in a dictionary by 1
         :param dict_: the dictionary
         :param key: the key containing the value to increment
-        :param child_key: if provided, increments the value inside of the child_key which is in the dictionary mapped to the key
+        :param child_key: if provided, increments the value inside the child_key which is in the dictionary mapped to the key
         :return: None
         """
         dict_ = AbstractTask.initialize_dict_entry(dict_, key, init_val={} if child_key else 0)

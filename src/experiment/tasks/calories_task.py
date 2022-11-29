@@ -19,7 +19,7 @@ class CaloriePredictionTask(RegressionBaseTask):
         :param model_manager: the model to use for the task
         :param n_epochs: the number of epochs to run training for
         """
-        super().__init__(model_manager, n_epochs=n_epochs, load_weights=False)
+        super().__init__(model_manager, n_epochs=n_epochs)
         menu_match_dataset = MenuMatchDataset()
         nutrition_dataset = NutritionDataset(Mode.CALORIE)
         train, validation = menu_match_dataset.split_to_train_test(TEST_SPLIT_SIZE)
@@ -32,11 +32,11 @@ class CaloriePredictionTask(RegressionBaseTask):
         self._validation = validation
         self._test = test
         self.trainer = CamTrainer(model_manager, **cam_args)
-
-    def train(self):
+        
+    def train(self, **kwargs):
         if self.use_cam:
             cam_dataset_converter = CamDatasetConverter(self.dataset, self.cam_path)
-            self.trainer.train(cam_dataset_converter, self._validation)
+            self.trainer.train(cam_dataset_converter, self._validation, **kwargs)
         else:
             super().train()
 

@@ -3,7 +3,7 @@ from typing import Tuple
 import tensorflow as tf
 
 from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
-from src.experiment.cam.cam_loss_alpha import CamLossAlpha
+from src.experiment.cam.cam_loss_alpha import AlphaStrategy, CamLossAlpha
 from src.experiment.models.managers.model_manager import ModelManager
 
 
@@ -13,13 +13,13 @@ class CamLoss:
     """
 
     def __init__(self, feature_model: tf.keras.Model, model_manager: ModelManager, total_epochs: int,
-                 alpha: float = None, alpha_decay: float = None):
+                 alpha_strategy: AlphaStrategy):
         self.feature_model = feature_model
         self.model_manager = model_manager
         self.criterion = tf.keras.losses.MeanSquaredError()
         self.criterion_hmap = tf.keras.losses.MeanSquaredError()
         self.optimizer = self.create_optimizer()
-        self.cam_loss_alpha = CamLossAlpha(total_epochs, alpha=alpha, alpha_decay=alpha_decay)
+        self.cam_loss_alpha = CamLossAlpha(total_epochs, alpha_strategy=alpha_strategy)
 
     @staticmethod
     def create_optimizer():
