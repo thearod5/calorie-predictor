@@ -31,7 +31,7 @@ class ModelManager(ABC):
         self.base_model_pooling = base_model_pooling
         self.create_task_model = create_task_model
         print("Base Model Path:\t", self.base_model_path)
-        print("Export path:\t\t", self.base_model_path)
+        print("Export path:\t\t", self.export_path)
 
     def get_model(self) -> Model:
         """
