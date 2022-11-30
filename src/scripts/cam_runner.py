@@ -50,6 +50,7 @@ class Args:
         parser.add_argument('--path', default=None)
         parser.add_argument('--modify', default=False, action="store_true")
         parser.add_argument('--export', default=None)
+        parser.add_argument('--nocam', default=False, action="store_true")
         parser.add_argument('--project', default=CHECKPOINT_BASE_PATH)
         parser.add_argument('--alpha', choices=[e.name.lower() for e in AlphaStrategy],
                             default=AlphaStrategy.CONSTANT_BALANCED.name)
@@ -61,6 +62,7 @@ class Args:
         self.export_path = os.path.join(args.project, args.export) if args.export else None
         self.alpha_strategy = self.name2enum(args.alpha, AlphaStrategy)
         self.modify = args.modify
+        self.use_cam = not args.nocam
 
     @staticmethod
     def name2enum(name: str, enum_class):
@@ -106,11 +108,14 @@ if __name__ == "__main__":
                                    runner_args.export_path,
                                    runner_args.modify)
     model_manager = runner_args.model_manager_class(**model_args)
-    task = CaloriePredictionTask(model_manager, n_epochs=N_EPOCHS, use_cam=True)
+    task = CaloriePredictionTask(model_manager, n_epochs=N_EPOCHS, use_cam=runner_args.use_cam)
     alpha_strategy: AlphaStrategy = runner_args.alpha_strategy
 
     if runner_args.job == TaskJob.TRAIN:
         print("Alpha Strategy:", alpha_strategy)
         task.train(alpha_strategy=alpha_strategy)
     if runner_args.job == TaskJob.EVAL:
-        task.trainer.perform_evaluation(task.get_test_data())
+        if runner_args.use_cam:
+            task.trainer.perform_evaluation(task.get_test_data())
+        else:
+            task.eval()
