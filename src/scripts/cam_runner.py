@@ -38,7 +38,7 @@ def get_args():
     parser.add_argument('--type', default="resnet")
     parser.add_argument('--pretrain', default=None)
     parser.add_argument('--mode', choices=["train", "eval"], default="train")
-    parser.add_argument('--alpha', choices=[e.name.lower() for e in AlphaStrategy], default=AlphaStrategy.ADAPTIVE.name)
+    parser.add_argument('--alpha', choices=[e.name.lower() for e in AlphaStrategy], default=AlphaStrategy.CONSTANT.name)
     parser.add_argument('--checkpoint', default=None)
 
     return parser.parse_args()
