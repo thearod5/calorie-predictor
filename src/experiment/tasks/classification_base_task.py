@@ -5,11 +5,11 @@ import tensorflow as tf
 from sklearn.metrics import confusion_matrix
 
 from constants import N_EPOCHS
-from logging_utils.utils import format_eval_results, format_header
 from src.experiment.Food2Index import Food2Index
 from src.experiment.models.managers.model_manager import ModelManager
 from src.experiment.tasks.base_task import AbstractTask, logger
 from src.experiment.tasks.task_type import TaskType
+from src.logging_utils.utils import format_eval_results, format_header
 
 
 class ClassificationBaseTask(AbstractTask, ABC):
@@ -85,3 +85,6 @@ class ClassificationBaseTask(AbstractTask, ABC):
         logger.info("False Negatives: %s" % FN.sum())
         logger.info("True Positive: %s" % TP.sum())
         logger.info("True Negative: %s" % TN.sum())
+
+    def create_model(self) -> tf.keras.Model:
+        return self.model_manager.create_model()

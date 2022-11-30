@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Tuple
+from typing import Tuple
 
 import keras
 import tensorflow as tf
@@ -8,35 +8,30 @@ from keras.layers import Dense, Dropout
 from tensorflow.python.layers.base import Layer
 
 from constants import INPUT_SHAPE
-from src.experiment.models.checkpoint_creator import get_checkpoint_path
 from src.experiment.tasks.task_type import TaskType
 
 
 class ModelManager(ABC):
-    def __init__(self, model_path: str = None, export_path: str = None):
+    def __init__(self, export_path: str, create_task_model: bool, base_model_path: str = None,
+                 base_model_weights: str = "imagenet",
+                 base_model_pooling: str = "avg"):
         """
         Constructs manager responsible for creating, loading, and saving models.
-        :param model_path:
-        :type model_path:
-        :param export_path:
-        :type export_path:
+        :param export_path: Where to save the model to.
+        :param base_model_path: Path to load base model from.
+        :param base_model_pooling: The pooling method for the base model if new model created.
+        :param base_model_weights: The weights for the base model if new model created.
         """
         self.__model = None
         self.__feature_model = None
         self.activation = {}
-        self.model_path = model_path
+        self.base_model_path = base_model_path
         self.export_path = export_path
-
-    def set_task_checkpoint(self, task: object, checkpoint_name: str = None) -> None:
-        """
-        Sets the export path of the manager to the checkpoint path with model sub-folder.
-        :param task: The task whose checkpoint path is used to export to.
-        :param checkpoint_name: The optional name of the sub-folder with the task checkpoint path.
-        :return: None
-        """
-        if self.export_path is None:
-            self.export_path = get_checkpoint_path(task.__class__.__name__, self.get_model_name())
-        print("Export path is:\t", self.export_path)
+        self.base_model_weights = base_model_weights
+        self.base_model_pooling = base_model_pooling
+        self.create_task_model = create_task_model
+        print("Base Model Path:\t", self.base_model_path)
+        print("Export path:\t\t", self.base_model_path)
 
     def get_model(self) -> Model:
         """
@@ -66,7 +61,7 @@ class ModelManager(ABC):
             self.__feature_model = Model(inputs=model.input, outputs=[model.output, layer_outputs])
         return self.__feature_model
 
-    def create_model(self, task: Tuple[TaskType, str], n_outputs: int, pre_trained_model=True) -> Model:
+    def create_model(self, task: Tuple[TaskType, str], n_outputs: int) -> Model:
         """
         Creates a Keras model.
         :return: The Keras model.
@@ -76,29 +71,24 @@ class ModelManager(ABC):
             task_name = self.__class__.__name__
 
             # 1. Create model
-            base_model = self.__create_base_model(pre_trained_model)
-            output_layer = self.__add_output_head(base_model, task, n_outputs)
+            if self.base_model_path:
+                base_model = self.__load_previous_model(self.base_model_path)
+            else:
+                base_model = self.__create_pre_trained_model()
+
+            if self.create_task_model:
+                print("Model Modifications:", "new task head")
+                output_layer = self.__add_task_head(base_model, task, n_outputs)
+            else:
+                print("Model Modifications:", "None.")
+                output_layer = base_model.output
 
             model_name = "_".join([self.get_model_name(), task_name])
             model = tf.keras.Model(inputs=base_model.input, outputs=output_layer, name=model_name)
-
             self.__model = model
         return self.__model
 
-    def __create_base_model(self, is_pretrained: bool):
-        """
-        Creates the base model for given task.
-        :param is_pretrained: Whether to load image_name pre-trained weights.
-        :rtype:
-        """
-        base_model_class = self.get_model_constructor()
-        if self.model_path:
-            return self.load_previous_model(self.model_path, remove_last_layer=True)
-        if is_pretrained:
-            return self.create_pre_trained_model(base_model_class)
-        return base_model_class()
-
-    def __add_output_head(self, base_model: Model, task: Tuple[TaskType, str], n_outputs: int):
+    def __add_task_head(self, base_model: Model, task: Tuple[TaskType, str], n_outputs: int):
         """
         Adds task-specific set of layers to base model.
         :param base_model: The base model to attach layers to.
@@ -117,42 +107,30 @@ class ModelManager(ABC):
                                      name=output_layer_name,
                                      activation=output_activation)(output_layer)
 
-    def load_previous_model(self, model_path: str, remove_last_layer: bool = True) -> Model:
+    def __load_previous_model(self, model_path: str) -> Model:
         """
         Loads model at given model path with autoloader.
         :param model_path: The path to the model weights and configuration.
-        :param remove_last_layer: Whether to remove the last layer of the model.
         :return: Keras.Model
         """
-        print("Loading model checkpoint:", model_path)
-        previous_model: Model = tf.keras.models.load_model(self.model_path)
-        if remove_last_layer:
+        previous_model: Model = tf.keras.models.load_model(self.base_model_path)
+        if self.create_task_model:
             return keras.Model(inputs=previous_model.input, outputs=previous_model.layers[-2].output)
         return previous_model
 
-    @staticmethod
-    def create_pre_trained_model(base_model_class: Callable[..., Model], weights: str = "imagenet", include_top=False,
-                                 pooling: str = "avg") -> Model:
+    def __create_pre_trained_model(self) -> Model:
         """
-        Creates pre-trained model for task.
-        :param include_top: Whether to include classification top.
-        :param base_model_class: The base model defining its architecture.
-        :param weights: The pre-trained weights.
-        :param pooling: The pooling function.
+        Creates pre-trained model as a base model for task.
         :return:
         """
-        inputs = tf.keras.Input(shape=INPUT_SHAPE)
-        print("Initializing with:", weights)
-        print("Include top:", include_top)
-        base_model_obj = base_model_class(
-            pooling=pooling,
-            include_top=include_top,
+        base_model_class = self.get_model_constructor()
+        return base_model_class(
+            pooling=self.base_model_pooling,
+            include_top=False,
             input_shape=INPUT_SHAPE,
-            weights=weights,
-            input_tensor=inputs
+            weights=self.base_model_weights,
+            input_tensor=tf.keras.Input(shape=INPUT_SHAPE)
         )
-
-        return base_model_obj
 
     @staticmethod
     def append_hidden_layer(base_model, hidden_size: int = 2048, activation: str = "relu",
@@ -195,10 +173,9 @@ class ModelManager(ABC):
         """
         pass
 
-    @abstractmethod
     def get_feature_weights(self):
         """
         Gets parameters for feature layer.
         :return: Feature layer parameters
         """
-        pass
+        return self.get_model().layers[-1].get_weights()[0]

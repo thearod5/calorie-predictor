@@ -2,8 +2,8 @@ from enum import Enum
 
 import tensorflow as tf
 from keras import Input
-from keras.layers import concatenate
-from keras.models import Model
+from tensorflow.keras.layers import concatenate
+from tensorflow.keras.models import Model
 from tensorflow.python.layers.base import Layer
 
 from constants import ENSEMBLE_METHOD, INPUT_SHAPE, N_HIDDEN

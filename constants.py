@@ -4,7 +4,7 @@ from os.path import *
 from dotenv import load_dotenv
 
 load_dotenv()
-ENV = os.getenv("ENV", "test")
+ENV = os.getenv("ENV", "prod")
 
 PROJECT_DIR = dirname(abspath(__file__))
 PATH_TO_PROJECT = "/Volumes/Betito HDD/Datasets/calorie-predictor"
@@ -23,7 +23,7 @@ TEST_SPLIT_SIZE = .20
 N_EPOCHS = 50
 LOG_SKIPPED_ENTRIES = False
 MAXIMUM_BUFFER_SIZE = 20000
-LOG_CONFIG_FILE = os.path.join(PROJECT_DIR, 'logging_utils', 'logging.conf')
+LOG_CONFIG_FILE = os.path.join(PROJECT_DIR, 'src/logging_utils', 'logging.conf')
 LOG_CHAR = "*"
 HEADING_CHARS = LOG_CHAR * 20
 SUBHEADING_CHARS = "-" * 10

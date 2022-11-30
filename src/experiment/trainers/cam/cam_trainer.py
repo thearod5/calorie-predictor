@@ -20,14 +20,13 @@ class CamTrainer:
     CAM_TRAINER_PATH = os.path.join(PROJECT_DIR, "results", "checkpoints", "CamTrainer")
 
     def __init__(self, model_manager: ModelManager, lr: float = 1e-4, weight_decay: float = 1e-6,
-                 momentum: float = 0.9, checkpoint_name: str = None):
+                 momentum: float = 0.9):
         """
         Initializes trainer with model and training parameters.
         :param model_manager: The manager of the model containing specification and builder.
         :param lr: The learning rate.
         :param weight_decay: The rate of decay of the optimizer.
         :param momentum: Optimizer momentum.s
-        :param checkpoint_name: The name of the subdirectory inside of task checkpoints.
         """
         self.model_manager = model_manager
         self.model = model_manager.get_model()
@@ -47,7 +46,7 @@ class CamTrainer:
         :param alpha_strategy: The type of strategy to use for adjusting the alpha value.
         :return: None
         """
-
+        print("\n", "-" * 25)
         cam_dataset = training_data.convert()
         cam_loss = CamLoss(self.feature_model, self.model_manager, n_epochs, alpha_strategy=alpha_strategy)
 
@@ -77,7 +76,7 @@ class CamTrainer:
             self.perform_step(images, y_true, cam_loss)
 
             if (batch_idx + 1) % epoch_evaluation == 0 and validation_data:
-                score = self.perform_evaluation(validation_data, use_tqdm=False)[eval_metric]
+                score = self.perform_evaluation(validation_data)[eval_metric]
                 score = round(score, 2)
                 is_better = self.cam_logger.log_eval(score, metric_direction)
                 if is_better:
@@ -108,32 +107,21 @@ class CamTrainer:
         self.cam_logger.log_step(composite_loss, calorie_loss, feature_loss, cam_loss.get_alpha(),
                                  predicted_average=calories_predicted_average)
 
-    def perform_evaluation(self, test_data: tf.data.Dataset, use_tqdm: bool = True):
+    def perform_evaluation(self, test_data: tf.data.Dataset):
         """
         Evaluates current model on test dataset using initialized metrics.
         :param test_data: The dataset to evaluate on.
-        :param use_tqdm: Whether to use the tqdm iterator which logs each iteration.
         :return: Dictionary of metric names to their values.
         """
         print("\nEvaluating...")
-        calories_predicted = []
-        calories_expected = []
-        test_data_iterator = tqdm(test_data) if use_tqdm else test_data
-        for batch_idx, (images, image_calories_expected) in enumerate(test_data_iterator):
-            calories_predicted_local = self.model.predict(images)
-            calories_predicted_local = tf.reshape(calories_predicted_local, (len(images)))
-            image_calories_expected = tf.reshape(image_calories_expected, len(images))
-            calories_predicted.extend(calories_predicted_local.numpy().tolist())
-            calories_expected.extend(image_calories_expected.numpy().tolist())
-
-        average_calories = round(sum(calories_expected) / len(calories_expected), 2)
-        average_calories_predicted = round(sum(calories_predicted) / len(calories_predicted), 2)
+        calories_predicted = self.model.predict(test_data)
+        calories_predicted = tf.reshape(calories_predicted, (calories_predicted.shape[0])).numpy().tolist()
+        calories_expected = [c_expected.numpy() for _, batch_y in test_data for c_expected in batch_y]
 
         results = {}
         for metric_name, metric in self.metrics:
             metric_value = metric(calories_expected, calories_predicted)
             results[metric_name] = round(metric_value, 2)
 
-        print("Average Calories:\t", average_calories, "Average Predicted:\t", average_calories_predicted, "\t",
-              results, "\n")
+        print("Validation Metrics:", results, "\n")
         return results

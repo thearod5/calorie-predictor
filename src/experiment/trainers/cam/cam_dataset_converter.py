@@ -1,9 +1,9 @@
 import os
 from typing import Tuple
 
+import cv2
 import tensorflow as tf
 from PIL import Image
-from keras_preprocessing.image import load_img
 
 from constants import BATCH_SIZE
 from src.datasets.abstract_dataset import AbstractDataset
@@ -46,7 +46,7 @@ class CamDatasetConverter:
         :return: Loaded image.
         """
         hmap_path = os.path.join(self.map_dir_path, image_name)
-        return load_img(hmap_path)
+        return cv2.imread(hmap_path)
 
     def pipeline(self, image):
         """
@@ -54,10 +54,11 @@ class CamDatasetConverter:
         :param image: The image to pre-process.
         :return: Resized, normalized, and grey scale image.
         """
-        image = tf.image.resize(image, (self.map_size[0], self.map_size[1]))
-        image = CamDatasetConverter.normalize(image)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        image = cv2.resize(image, (7, 7))
         image = tf.convert_to_tensor(image)
-        image = tf.image.rgb_to_grayscale(image)
+        image = CamDatasetConverter.normalize(image)
+        image = tf.cast(image, tf.float32)
         return image
 
     @staticmethod

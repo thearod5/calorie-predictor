@@ -2,13 +2,14 @@ from abc import ABC
 from typing import Any, List, Tuple
 
 import numpy as np
-from tensorflow.keras.metrics import mean_absolute_error
+import tensorflow as tf
+from keras.losses import mean_absolute_error
 
 from constants import N_EPOCHS
-from logging_utils.utils import format_name_val_info
 from src.experiment.models.managers.model_manager import ModelManager
 from src.experiment.tasks.base_task import AbstractTask, logger
 from src.experiment.tasks.task_type import TaskType
+from src.logging_utils.utils import format_name_val_info
 
 
 class RegressionBaseTask(AbstractTask, ABC):
@@ -46,3 +47,7 @@ class RegressionBaseTask(AbstractTask, ABC):
         y_true = list(map(lambda v: v.numpy(), y_true))  # unpacks 1D vector into single number
         y_true = np.array(y_true)
         return y_true, y_pred
+
+    def create_model(self) -> tf.keras.Model:
+        return self.model_manager.create_model((self.task_type, self.task_name), n_outputs=self.n_outputs,
+                                               pre_trained_model=self.is_pretrained)

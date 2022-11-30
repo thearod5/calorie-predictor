@@ -10,13 +10,12 @@ from keras.losses import mean_absolute_error
 from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.python.data import Dataset
 
-from logging_utils.utils import *
 from src.datasets.abstract_dataset import AbstractDataset
 from src.experiment.Food2Index import Food2Index
 from src.experiment.models.managers.model_manager import ModelManager
-from src.experiment.models.managers.model_managers import PRE_TRAINED_MODEL_MANAGERS
 from src.experiment.tasks.task_mode import TaskMode
 from src.experiment.tasks.task_type import TaskType
+from src.logging_utils.utils import *
 
 logging.config.fileConfig(LOG_CONFIG_FILE)
 logger = logging.getLogger()
@@ -55,10 +54,7 @@ class AbstractTask(ABC):
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
         self.model_manager = model_manager
-        self.model_manager.set_task_checkpoint(self)
-        self.is_pretrained = any([isinstance(model_manager, pt.value) for pt in PRE_TRAINED_MODEL_MANAGERS])
-        self.model = self.model_manager.create_model((self.task_type, self.task_name), n_outputs=self.n_outputs,
-                                                     pre_trained_model=self.is_pretrained)
+        self.__model = self.model_manager.create_model((self.task_type, self.task_name), n_outputs=self.n_outputs)
 
     @property
     @abstractmethod
@@ -138,6 +134,23 @@ class AbstractTask(ABC):
         """
         pass
 
+    @abstractmethod
+    def create_model(self) -> tf.keras.Model:
+        """
+        Creates the model used for running this task.
+        :return: The model created for this task.
+        """
+        pass
+
+    def get_model(self) -> tf.keras.Model:
+        """
+        Returns the current model for this task.
+        :return: The model for training or predicting.
+        """
+        if self.__model is None:
+            self.__model = self.create_model()
+        return self.__model
+
     def train(self):
         """
         Trains the model
@@ -147,20 +160,20 @@ class AbstractTask(ABC):
         logger.info("Task: " + self.task_name)
         logger.info(format_name_val_info("Model", self.model_manager.get_model_name()))
 
-        self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
+        model = self.get_model().compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
 
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
             filepath=self.model_manager.export_path,
             monitor=task_monitor,
-            mode=self.task_mode,
+            mode=self.task_mode.name,
             verbose=1,
             save_best_only=True)
         training_data = self.get_training_data()
-        self.model.fit(training_data,
-                       epochs=self.n_epochs,
-                       validation_data=self.get_validation_data(),
-                       callbacks=[model_checkpoint_callback])
+        model.fit(training_data,
+                  epochs=self.n_epochs,
+                  validation_data=self.get_validation_data(),
+                  callbacks=[model_checkpoint_callback])
 
     def get_predictions(self, data) -> Tuple[List, Any]:
         """
@@ -169,7 +182,8 @@ class AbstractTask(ABC):
         :return: the expected results and those predicted
         """
         logger.info(format_header("Predicting"))
-        y_pred = self.model.predict(data)
+        model = self.get_model()
+        y_pred = model.predict(data)
         y_true = [y_vector for _, batch_y in data for y_vector in batch_y]
         return y_true, y_pred
 

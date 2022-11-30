@@ -65,8 +65,8 @@ class CamLogger:
         if do_print:
             print("\rEpoch:", self.epoch,
                   "\tStep:", self.n_steps,
-                  "\tCurrent Error:", calorie_loss.numpy(),
-                  "\tAverage:", average_loss.numpy(),
+                  "\tCurrent Error:", round(calorie_loss.numpy(), 2),
+                  "\tAverage:", round(average_loss.numpy(), 2),
                   "\tAlpha:", alpha)
         if do_export:
             self.export_log(**kwargs)

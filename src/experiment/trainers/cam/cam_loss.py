@@ -80,7 +80,11 @@ class CamLoss:
 
         # 3. Calculate composite loss
         alpha = self.get_alpha()
-        composite_loss = (alpha * calorie_loss) + ((1 - alpha) * cam_loss * calorie_loss)
+        calorie_item = (alpha * calorie_loss)
+        cam_item = (1 - alpha) * cam_loss
+        if self.cam_loss_alpha.alpha_strategy != AlphaStrategy.CONSTANT:
+            cam_item = cam_item * calorie_loss
+        composite_loss = calorie_item + cam_item
         assert not tf.math.is_nan(composite_loss), "Composite loss is NAN."
         losses = calorie_loss, cam_loss, composite_loss
         losses = [tf.math.sqrt(loss) for loss in losses]

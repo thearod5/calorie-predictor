@@ -2,15 +2,16 @@ from enum import Enum
 
 
 class AlphaStrategy(Enum):
-    CONSTANT = "constant"
+    CONSTANT_BALANCED = "constant_balanced"
     ADAPTIVE = "adaptive"
+    CONSTANT = "constant"
 
 
 class CamLossAlpha:
     def __init__(self, total_epochs: int, alpha_strategy: AlphaStrategy, alpha_decay: float = 0.2):
         self.alpha_strategy = alpha_strategy
         self.n_epochs = 1
-        if alpha_strategy == AlphaStrategy.CONSTANT:
+        if alpha_strategy == AlphaStrategy.CONSTANT_BALANCED:
             self.alpha = .5
             self.alpha_decay = None
         else:
@@ -26,7 +27,7 @@ class CamLossAlpha:
         :return: Whether alpha was updated this step.
         """
         self.n_epochs += 1
-        if self.alpha_strategy == AlphaStrategy.CONSTANT:
+        if self.alpha_strategy == AlphaStrategy.CONSTANT_BALANCED:
             return False
         if self.n_epochs % self.n_alpha_updates == 0:
             self.alpha -= self.alpha_decay
