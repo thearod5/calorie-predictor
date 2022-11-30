@@ -34,7 +34,9 @@ class ModelManager(ABC):
         :param checkpoint_name: The optional name of the sub-folder with the task checkpoint path.
         :return: None
         """
-        self.export_path = get_checkpoint_path(task.__class__.__name__, self.get_model_name())
+        if self.export_path is None:
+            self.export_path = get_checkpoint_path(task.__class__.__name__, self.get_model_name())
+        print("Export path is:\t", self.export_path)
 
     def get_model(self) -> Model:
         """

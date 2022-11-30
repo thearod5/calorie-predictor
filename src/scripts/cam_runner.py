@@ -47,7 +47,7 @@ def get_args():
 if __name__ == "__main__":
     # 1. Create argument and set data env
     args = get_args()
-    data_env = "prod"
+    data_env = "test"
     set_data(data_env)
     data_dir = get_data_dir()
     n_gpus = len(tf.config.experimental.list_physical_devices('GPU'))
@@ -66,6 +66,7 @@ if __name__ == "__main__":
             assert args.model is not None, "Expected model to be defined (e.g. --model resnet)."
             model_name = args.type
             model_manager_params["model_path"] = os.path.join(CHECKPOINT_BASE_PATH, args.load)
+            model_manager_params["export_path"] = model_manager_params["model_path"]
             checkpoint_name = "STOP"
         elif args.model:
             model_name = args.model
