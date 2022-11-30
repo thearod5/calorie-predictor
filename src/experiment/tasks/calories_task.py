@@ -5,10 +5,10 @@ import tensorflow as tf
 from constants import N_EPOCHS, TEST_SPLIT_SIZE, get_cam_path
 from src.datasets.menu_match_dataset import MenuMatchDataset
 from src.datasets.nutrition_dataset import Mode, NutritionDataset
-from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
-from src.experiment.cam.cam_trainer import CamTrainer
 from src.experiment.models.managers.model_manager import ModelManager
 from src.experiment.tasks.regression_base_task import RegressionBaseTask
+from src.experiment.trainers.cam.cam_dataset_converter import CamDatasetConverter
+from src.experiment.trainers.cam.cam_trainer import CamTrainer
 
 
 class CaloriePredictionTask(RegressionBaseTask):
@@ -32,7 +32,7 @@ class CaloriePredictionTask(RegressionBaseTask):
         self._validation = validation
         self._test = test
         self.trainer = CamTrainer(model_manager, **cam_args)
-        
+
     def train(self, **kwargs):
         if self.use_cam:
             cam_dataset_converter = CamDatasetConverter(self.dataset, self.cam_path)

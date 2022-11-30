@@ -13,9 +13,8 @@ from tensorflow.python.data import Dataset
 from logging_utils.utils import *
 from src.datasets.abstract_dataset import AbstractDataset
 from src.experiment.Food2Index import Food2Index
-from src.experiment.models.checkpoint_creator import get_checkpoint_path
 from src.experiment.models.managers.model_manager import ModelManager
-from src.experiment.models.managers.model_managers import PRE_TRAINED_MODELS
+from src.experiment.models.managers.model_managers import PRE_TRAINED_MODEL_MANAGERS
 from src.experiment.tasks.task_mode import TaskMode
 from src.experiment.tasks.task_type import TaskType
 
@@ -52,20 +51,14 @@ class AbstractTask(ABC):
         :param n_outputs: the number of nodes for the output layer
         :param n_epochs: the number of epochs to run training for
         """
-        section_heading = "Run Settings"
-        task_name = self.__class__.__name__
-        logger.info(format_header(section_heading))
-        logger.info("Task: " + task_name)
-
+        self.task_name = self.__class__.__name__
         self.n_outputs = n_outputs
         self.n_epochs = n_epochs
-
         self.model_manager = model_manager
-        is_pretrained = any([isinstance(model_manager, pt.value) for pt in PRE_TRAINED_MODELS])
-        self.model = model_manager.create_model((self.task_type, task_name), n_outputs=n_outputs,
-                                                pre_trained_model=is_pretrained)
-        self.checkpoint_path = get_checkpoint_path(self.__class__.__name__, self.model_manager.get_model_name())
-        logger.info(get_section_break(section_heading))
+        self.model_manager.set_task_checkpoint(self)
+        self.is_pretrained = any([isinstance(model_manager, pt.value) for pt in PRE_TRAINED_MODEL_MANAGERS])
+        self.model = self.model_manager.create_model((self.task_type, self.task_name), n_outputs=self.n_outputs,
+                                                     pre_trained_model=self.is_pretrained)
 
     @property
     @abstractmethod
@@ -150,12 +143,15 @@ class AbstractTask(ABC):
         Trains the model
         :return: None
         """
-        self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
         logger.info(format_header("Training"))
+        logger.info("Task: " + self.task_name)
         logger.info(format_name_val_info("Model", self.model_manager.get_model_name()))
+
+        self.model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
+
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(
-            filepath=self.checkpoint_path,
+            filepath=self.model_manager.export_path,
             monitor=task_monitor,
             mode=self.task_mode,
             verbose=1,

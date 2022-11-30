@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import tensorflow as tf
 
-from src.experiment.cam.cam_writer import CamLogWriter
+from src.experiment.trainers.cam.cam_writer import CamLogWriter
 
 
 class CamLogger:

@@ -11,6 +11,7 @@ PATH_TO_PROJECT = "/Volumes/Betito HDD/Datasets/calorie-predictor"
 PATH_TO_OUTPUT_DIR = os.path.join(PROJECT_DIR, "processed")
 IMAGE_NAME_SEPARATOR = "-"
 IMAGE_DIR = "images"
+CHECKPOINT_BASE_PATH = os.path.join(PROJECT_DIR, "results", "checkpoints")
 
 RANDOM_SEED = 0
 N_CHANNELS = 3
@@ -48,7 +49,7 @@ def set_data(test_env: str):
 
 
 def get_cam_path():
-    return os.path.join(get_data_dir(), "cam")
+    return os.path.join(PROJECT_DIR, "processed", "cam")
 
 
 DEFAULT_TURK_RESULTS = os.path.join(PROJECT_DIR, "src/turk_task", "data")

@@ -5,13 +5,12 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from constants import BATCH_SIZE, N_EPOCHS, PROJECT_DIR
-from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
-from src.experiment.cam.cam_logger import CamLogger
-from src.experiment.cam.cam_loss import CamLoss
-from src.experiment.cam.cam_loss_alpha import AlphaStrategy
 from src.experiment.metric_provider import MetricProvider
-from src.experiment.models.checkpoint_creator import get_checkpoint_path
 from src.experiment.models.managers.model_manager import ModelManager
+from src.experiment.trainers.cam.cam_dataset_converter import CamDatasetConverter
+from src.experiment.trainers.cam.cam_logger import CamLogger
+from src.experiment.trainers.cam.cam_loss import CamLoss
+from src.experiment.trainers.cam.cam_loss_alpha import AlphaStrategy
 
 
 class CamTrainer:
@@ -32,25 +31,11 @@ class CamTrainer:
         """
         self.model_manager = model_manager
         self.model = model_manager.get_model()
-        self.model_path = get_checkpoint_path(self.CAM_TRAINER_PATH, self.model_manager.get_model_name(),
-                                              checkpoint_name=checkpoint_name)
         self.learning_rate = lr
         self.metrics: List[Tuple[str, Callable]] = [("mae", MetricProvider.mean_absolute_error),
                                                     ("avg_diff", MetricProvider.error_of_average)]
         self.feature_model = model_manager.get_feature_model()
-        self.cam_logger = CamLogger(self.model_path, BATCH_SIZE)
-        os.makedirs(self.model_path, exist_ok=True)
-        print("Saving model to:", self.model_path)
-
-    def save_model(self, prefix="") -> None:
-        """
-        Saves current model to model path.
-        :param prefix: Prefix to print before logging statement.
-        :return:None
-        """
-        self.model.save(self.model_path)
-        message = " ".join([prefix, "Model Saved:", self.model_path])
-        print(message)
+        self.cam_logger = CamLogger(self.model_manager.export_path, BATCH_SIZE)
 
     def train(self, training_data: CamDatasetConverter, validation_data: tf.data.Dataset, n_epochs: int = N_EPOCHS,
               alpha_strategy: AlphaStrategy = AlphaStrategy.ADAPTIVE) -> None:
@@ -97,7 +82,10 @@ class CamTrainer:
                 is_better = self.cam_logger.log_eval(score, metric_direction)
                 if is_better:
                     message = "New Best Score:" + str(score)
-                    self.save_model(prefix=message)
+                    self.model_manager.save_model()
+                else:
+                    message = "Score did not improve from %s (%s)" % (self.cam_logger.validation_score, score)
+                print(message)
 
     def perform_step(self, x, y_true: Tuple[tf.Tensor, tf.Tensor], cam_loss: CamLoss):
         """
@@ -140,10 +128,12 @@ class CamTrainer:
 
         average_calories = round(sum(calories_expected) / len(calories_expected), 2)
         average_calories_predicted = round(sum(calories_predicted) / len(calories_predicted), 2)
-        print("Average Calories:\t", average_calories, "Average Predicted:\t", average_calories_predicted, "\n")
 
         results = {}
         for metric_name, metric in self.metrics:
             metric_value = metric(calories_expected, calories_predicted)
-            results[metric_name] = metric_value
+            results[metric_name] = round(metric_value, 2)
+
+        print("Average Calories:\t", average_calories, "Average Predicted:\t", average_calories_predicted, "\t",
+              results, "\n")
         return results

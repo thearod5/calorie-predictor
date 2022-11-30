@@ -15,4 +15,4 @@ class ModelManagers(Enum):
     ENSEMBLE = EnsembleModelManager
 
 
-PRE_TRAINED_MODELS = [ModelManagers.VGG, ModelManagers.RESNET, ModelManagers.XCEPTION]
+PRE_TRAINED_MODEL_MANAGERS = [ModelManagers.VGG, ModelManagers.RESNET, ModelManagers.XCEPTION]

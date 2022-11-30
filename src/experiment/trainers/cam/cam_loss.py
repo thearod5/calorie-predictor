@@ -2,9 +2,9 @@ from typing import Tuple
 
 import tensorflow as tf
 
-from src.experiment.cam.cam_dataset_converter import CamDatasetConverter
-from src.experiment.cam.cam_loss_alpha import AlphaStrategy, CamLossAlpha
 from src.experiment.models.managers.model_manager import ModelManager
+from src.experiment.trainers.cam.cam_dataset_converter import CamDatasetConverter
+from src.experiment.trainers.cam.cam_loss_alpha import AlphaStrategy, CamLossAlpha
 
 
 class CamLoss:

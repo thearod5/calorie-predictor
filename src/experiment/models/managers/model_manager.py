@@ -8,15 +8,33 @@ from keras.layers import Dense, Dropout
 from tensorflow.python.layers.base import Layer
 
 from constants import INPUT_SHAPE
+from src.experiment.models.checkpoint_creator import get_checkpoint_path
 from src.experiment.tasks.task_type import TaskType
 
 
 class ModelManager(ABC):
-    def __init__(self, model_path: str = None):
+    def __init__(self, model_path: str = None, export_path: str = None):
+        """
+        Constructs manager responsible for creating, loading, and saving models.
+        :param model_path:
+        :type model_path:
+        :param export_path:
+        :type export_path:
+        """
         self.__model = None
         self.__feature_model = None
         self.activation = {}
         self.model_path = model_path
+        self.export_path = export_path
+
+    def set_task_checkpoint(self, task: object, checkpoint_name: str = None) -> None:
+        """
+        Sets the export path of the manager to the checkpoint path with model sub-folder.
+        :param task: The task whose checkpoint path is used to export to.
+        :param checkpoint_name: The optional name of the sub-folder with the task checkpoint path.
+        :return: None
+        """
+        self.export_path = get_checkpoint_path(task.__class__.__name__, self.get_model_name())
 
     def get_model(self) -> Model:
         """
@@ -25,6 +43,15 @@ class ModelManager(ABC):
         if self.__model is None:
             raise Exception("Model has not been constructed.")
         return self.__model
+
+    def save_model(self):
+        """
+        Saves current model to export path.
+        :return: None
+        """
+        model = self.get_model()
+        model.save(self.export_path)
+        print("Model saved!", "(", self.export_path, ")")
 
     def get_feature_model(self) -> tf.keras.Model:
         """
@@ -43,6 +70,7 @@ class ModelManager(ABC):
         :return: The Keras model.
         """
         if self.__model is None:
+            assert self.export_path is not None, "Export path is not set on model."
             task_name = self.__class__.__name__
 
             # 1. Create model
