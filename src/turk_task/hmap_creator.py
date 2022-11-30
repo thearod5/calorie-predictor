@@ -33,7 +33,7 @@ class HMapCreator:
         :return: None
         """
         export_dir = os.path.join(get_cam_path(), self.dataset_name)
-        for batch_index, result_file_name in enumerate(self.result_file_names):
+        for batch_index, result_file_name in enumerate(tqdm(self.result_file_names)):
             batch_id = batch_index + 1
             print("Starting batch: %d / %d" % (batch_id, self.n_batches))
             self._save_hmap_batch(result_file_name, batch_id, export_dir)
@@ -44,7 +44,7 @@ class HMapCreator:
         :return: None
         """
         dataset_path = os.path.join(get_cam_path(), self.dataset.dataset_path_creator.name)
-        for image_name in self.dataset.get_image_names(with_extension=True):
+        for image_name in tqdm(self.dataset.get_image_names(with_extension=True)):
             HMapCreator._save_avg_hmap_for_image(dataset_path, image_name)
 
     def _save_hmap_batch(self, result_file_name: str, batch_id: int, batch_id_path: str) -> None:
@@ -110,7 +110,7 @@ class HMapCreator:
 
             hmap = cv2.imread(hmap_path)
             hmap = hmap / 255.0
-            hmap = cv2.GaussianBlur(hmap, (75, 75), cv2.BORDER_DEFAULT)
+            hmap = cv2.blur(hmap, ksize=(250, 250))
             avg_hmap = hmap if avg_hmap is None else avg_hmap + hmap
             n_batches += 1
         if avg_hmap is None:
