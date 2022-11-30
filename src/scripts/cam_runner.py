@@ -79,6 +79,8 @@ if __name__ == "__main__":
             checkpoint_task_class: AbstractTask = name2enum(task_name, Tasks).value
             checkpoint_task_name = checkpoint_task_class.__name__
             model_manager_params["model_path"] = get_checkpoint_path(checkpoint_task_name, model_name)
+            model_manager_params["export_path"] = get_checkpoint_path("CamTrainer", task_name,
+                                                                      checkpoint_name="pretrain")
             checkpoint_name = os.path.join("pretrain", task_name)
             print("Loading pre-trained model on task (%s) with model (%s)." % (task_name, model_name))
 
