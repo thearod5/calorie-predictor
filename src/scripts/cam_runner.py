@@ -4,8 +4,6 @@ import sys
 import warnings
 from enum import Enum
 
-from logging_utils.utils import format_header
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tensorflow as tf
@@ -13,7 +11,7 @@ import tensorflow as tf
 # makes this runnable from command line
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 sys.path.append(path_to_src)
-
+from logging_utils.utils import format_header
 from src.experiment.trainers.cam.cam_loss_alpha import AlphaStrategy
 from constants import CHECKPOINT_BASE_PATH, N_EPOCHS, get_data_dir
 from src.experiment.models.managers.model_managers import ModelManagers
