@@ -47,7 +47,7 @@ def get_args():
 if __name__ == "__main__":
     # 1. Create argument and set data env
     args = get_args()
-    data_env = "test"
+    data_env = "prod"
     set_data(data_env)
     data_dir = get_data_dir()
     n_gpus = len(tf.config.experimental.list_physical_devices('GPU'))
