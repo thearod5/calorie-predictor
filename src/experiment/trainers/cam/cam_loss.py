@@ -79,7 +79,8 @@ class CamLoss:
         cam_loss = self.criterion_hmap(hmaps, cams)
 
         # 3. Calculate composite loss
-        composite_loss = cam_loss * calorie_loss
+        alpha = self.cam_loss_alpha.alpha
+        composite_loss = (alpha * calorie_loss) + ((1 - alpha) * cam_loss * calorie_loss)
         assert not tf.math.is_nan(composite_loss), "Composite loss is NAN."
         losses = calorie_loss, cam_loss, composite_loss
         losses = [tf.math.sqrt(loss) for loss in losses]
