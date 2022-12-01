@@ -5,6 +5,9 @@ import warnings
 from enum import Enum
 from typing import Type
 
+from src.experiment.tasks.base_task import AbstractTask
+from src.experiment.tasks.task_identifiers import Tasks
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tensorflow as tf
@@ -17,7 +20,6 @@ from src.experiment.models.managers.model_manager import ModelManager
 from src.experiment.trainers.cam.cam_loss_alpha import AlphaStrategy
 from constants import CHECKPOINT_BASE_PATH, ENV, N_EPOCHS, get_data_dir
 from src.experiment.models.managers.model_managers import ModelManagers
-from src.experiment.tasks.calories_task import CaloriePredictionTask
 
 warnings.filterwarnings("ignore")
 
@@ -39,6 +41,7 @@ class Args:
     base_path: str
     export_path: str
     alpha_strategy: AlphaStrategy
+    task: Tasks
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='Compile a model for training or evaluation on some task.')
@@ -54,6 +57,7 @@ class Args:
         parser.add_argument('--project', default=CHECKPOINT_BASE_PATH)
         parser.add_argument('--alpha', choices=[e.name.lower() for e in AlphaStrategy],
                             default=AlphaStrategy.CONSTANT_BALANCED.name)
+        parser.add_argument('--task', choices=[t.name.lower() for t in Tasks], default=Tasks.CALORIE.name)
         args = parser.parse_args()
         self.job = self.name2enum(args.job, TaskJob)
         self.model_state = self.name2enum(args.state, ModelState)
@@ -63,6 +67,7 @@ class Args:
         self.alpha_strategy = self.name2enum(args.alpha, AlphaStrategy)
         self.modify = args.modify
         self.use_cam = not args.nocam
+        self.task: Type[AbstractTask] = self.name2enum(args.task, Tasks).value
 
     @staticmethod
     def name2enum(name: str, enum_class):
@@ -102,20 +107,25 @@ if __name__ == "__main__":
     print("Num GPUs Available: " + str(n_gpus))
     print("Data Env: %s" % ENV)
 
-    # 3. Create task and arguments
+    # 3. Create task and train arguments
+    train_kwargs = {}
+    task_kwargs = {}
     model_args = create_model_args(runner_args.model_state,
                                    runner_args.base_path,
                                    runner_args.export_path,
                                    runner_args.modify)
     model_manager = runner_args.model_manager_class(**model_args)
-    task = CaloriePredictionTask(model_manager, n_epochs=N_EPOCHS, use_cam=runner_args.use_cam)
-    alpha_strategy: AlphaStrategy = runner_args.alpha_strategy
+
+    # 4. Create task
+    if runner_args.task == Tasks.CALORIE.value:
+        train_kwargs["alpha_strategy"] = runner_args.alpha_strategy
+        task_kwargs["use_cam"] = runner_args.use_cam
+    task = runner_args.task(model_manager, n_epochs=N_EPOCHS, **task_kwargs)
 
     if runner_args.job == TaskJob.TRAIN:
-        print("Alpha Strategy:", alpha_strategy)
-        task.train(alpha_strategy=alpha_strategy)
+        task.train(**train_kwargs)
     if runner_args.job == TaskJob.EVAL:
-        if runner_args.use_cam:
+        if runner_args.use_cam and runner_args.task == Tasks.CALORIE.value:
             task.trainer.perform_evaluation(task.get_test_data())
         else:
             task.eval()
