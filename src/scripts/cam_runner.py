@@ -5,9 +5,6 @@ import warnings
 from enum import Enum
 from typing import Type
 
-from src.experiment.tasks.base_task import AbstractTask
-from src.experiment.tasks.task_identifiers import Tasks
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tensorflow as tf
@@ -15,6 +12,8 @@ import tensorflow as tf
 # makes this runnable from command line
 path_to_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 sys.path.append(path_to_src)
+from src.experiment.tasks.base_task import AbstractTask
+from src.experiment.tasks.task_identifiers import Tasks
 from src.logging_utils.utils import format_header
 from src.experiment.models.managers.model_manager import ModelManager
 from src.experiment.trainers.cam.cam_loss_alpha import AlphaStrategy
