@@ -24,12 +24,12 @@ class EnsembleModelManager(ModelManager):
     def get_model_name(self) -> str:
         return "ensemble"
 
-    def __init__(self, n_hidden=N_HIDDEN):
+    def __init__(self, n_hidden=N_HIDDEN, **kwargs):
         """
         Represents a combination of multiple models
         :param n_hidden: number of hidden layers to use
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.n_hidden = n_hidden
 
     def get_model_constructor(self):
@@ -44,7 +44,11 @@ class EnsembleModelManager(ModelManager):
             model_output_layer = single_model.output
         hidden_layer = tf.keras.layers.Dense(self.n_hidden)(model_output_layer)
         model = Model(inputs=input_layer, outputs=hidden_layer)
-        return lambda: model
+
+        def model_lambda(**kwargs):
+            return model
+
+        return model_lambda
 
     @staticmethod
     def get_feature_layer(model: Model) -> Layer:

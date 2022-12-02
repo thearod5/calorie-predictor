@@ -1,5 +1,5 @@
-from src.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 from src.datasets.eucstfd_dataset import EucstfdDataset
+from src.preprocessing.base_processor import BaseProcessor, ProcessingPaths, ProcessingSettings
 
 
 class EcustfdProcessor(BaseProcessor):
@@ -17,3 +17,6 @@ class EcustfdProcessor(BaseProcessor):
         :return: the paths
         """
         return self.create_generic_single_output(entry_name, self.dataset_path_creator.image_dir)
+
+    def post_process(self, settings: ProcessingSettings):
+        self._copy_label_file()

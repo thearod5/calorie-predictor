@@ -57,6 +57,7 @@ class Args:
         parser.add_argument('--alpha', choices=[e.name.lower() for e in AlphaStrategy],
                             default=AlphaStrategy.CONSTANT_BALANCED.name)
         parser.add_argument('--task', choices=[t.name.lower() for t in Tasks], default=Tasks.CALORIE.name)
+        parser.add_argument('--usesplit', default=False, action="store_true")
         args = parser.parse_args()
         self.job = self.name2enum(args.job, TaskJob)
         self.model_state = self.name2enum(args.state, ModelState)
@@ -67,6 +68,7 @@ class Args:
         self.modify = args.modify
         self.use_cam = not args.nocam
         self.task: Type[AbstractTask] = self.name2enum(args.task, Tasks).value
+        self.use_train_test_split = args.usesplit
 
     @staticmethod
     def name2enum(name: str, enum_class):
@@ -119,6 +121,7 @@ if __name__ == "__main__":
     if runner_args.task == Tasks.CALORIE.value:
         train_kwargs["alpha_strategy"] = runner_args.alpha_strategy
         task_kwargs["use_cam"] = runner_args.use_cam
+        task_kwargs["use_train_test_split"] = runner_args.use_train_test_split
     task = runner_args.task(model_manager, n_epochs=N_EPOCHS, **task_kwargs)
 
     if runner_args.job == TaskJob.TRAIN:

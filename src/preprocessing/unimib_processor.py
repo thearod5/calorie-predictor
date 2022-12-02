@@ -1,5 +1,5 @@
-from src.preprocessing.base_processor import BaseProcessor, ProcessingPaths
 from src.datasets.unimib_dataset import UnimibDataset
+from src.preprocessing.base_processor import BaseProcessor, ProcessingPaths, ProcessingSettings
 
 
 class UnimibProcessor(BaseProcessor):
@@ -14,3 +14,6 @@ class UnimibProcessor(BaseProcessor):
         :return: the paths
         """
         return self.create_generic_single_output(entry_name, self.dataset_path_creator.image_dir)
+
+    def post_process(self, settings: ProcessingSettings):
+        self._copy_label_file()

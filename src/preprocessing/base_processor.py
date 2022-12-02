@@ -1,4 +1,5 @@
 import os
+import shutil
 import traceback
 from abc import abstractmethod
 from typing import Dict, List, Optional, Tuple
@@ -113,6 +114,15 @@ class BaseProcessor:
         :return: a list of paths
         """
         return AbstractDataset.get_image_paths(self.input_image_dir)
+
+    def _copy_label_file(self):
+        """
+        Moves the label file from the source path to the final project directory.
+        :return: None
+        """
+        src = os.path.join(self.dataset_path_creator.source_dir, self.dataset_path_creator.label_file_name)
+        dst = self.dataset_path_creator.label_file
+        shutil.copyfile(src, dst)
 
     def resize_images(self, image_paths: List, settings: ProcessingSettings):
         """
