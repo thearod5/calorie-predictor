@@ -37,6 +37,11 @@ class EnsembleModelManager(ModelManager):
         if len(models) > 1:
             input_layer = Input(shape=INPUT_SHAPE, name="shared_input")
             ensemble_method = ENSEMBLE_METHODS[ENSEMBLE_METHOD]
+            for model_index, model in enumerate(models):
+                model_name = "model" + str(model_index)
+                for layer in model.layers:
+                    layer._name = layer._name + '_' + model_name
+                model._name = model._name + "_" + model_name
             model_output_layer = ensemble_method([model(input_layer) for model in models])
         else:
             single_model = models.pop(0)
