@@ -161,7 +161,7 @@ class AbstractTask(ABC):
         logger.info(format_name_val_info("Model", self.model_manager.get_model_name()))
 
         model = self.get_model()
-        model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric], run_eagerly=True)
+        model.compile(optimizer="adam", loss=self.loss_function, metrics=[self.metric])
 
         task_monitor = "val_" + self.metric
         model_checkpoint_callback = ModelCheckpoint(

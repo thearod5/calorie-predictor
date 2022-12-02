@@ -1,9 +1,8 @@
 from enum import Enum
 
 import tensorflow as tf
-from keras import Input
-from tensorflow.keras.layers import concatenate
-from tensorflow.keras.models import Model
+from keras import Input, Model
+from keras.layers import concatenate
 from tensorflow.python.layers.base import Layer
 
 from constants import ENSEMBLE_METHOD, INPUT_SHAPE, N_HIDDEN
@@ -21,9 +20,6 @@ ENSEMBLE_METHODS = {
 
 
 class EnsembleModelManager(ModelManager):
-    def get_model_name(self) -> str:
-        return "ensemble"
-
     def __init__(self, n_hidden=N_HIDDEN, **kwargs):
         """
         Represents a combination of multiple models
@@ -32,6 +28,9 @@ class EnsembleModelManager(ModelManager):
         super().__init__(**kwargs)
         self.n_hidden = n_hidden
 
+    def get_model_name(self) -> str:
+        return "ensemble"
+
     def get_model_constructor(self):
         models = [tf.keras.models.load_model(checkpoint) for checkpoint in checkpoints]
         if len(models) > 1:
@@ -39,8 +38,6 @@ class EnsembleModelManager(ModelManager):
             ensemble_method = ENSEMBLE_METHODS[ENSEMBLE_METHOD]
             for model_index, model in enumerate(models):
                 model_name = "model" + str(model_index)
-                for layer in model.layers:
-                    layer._name = layer._name + '_' + model_name
                 model._name = model._name + "_" + model_name
             model_output_layer = ensemble_method([model(input_layer) for model in models])
         else:
