@@ -57,7 +57,7 @@ class CamTrainer:
 
     def perform_cam_epoch(self, training_data, cam_loss: CamLoss,
                           validation_data: tf.data.Dataset = None,
-                          n_evaluations: int = 4, eval_metric="mae",
+                          n_evaluations: int = 1, eval_metric="mae",
                           metric_direction="lower") -> None:
         """
         Performs an epoch of cam training on data.
