@@ -84,6 +84,7 @@ class CamTrainer:
                     self.model_manager.save_model()
                 else:
                     message = "Score did not improve from %s (%s)" % (self.cam_logger.validation_score, score)
+                    print("Previous best located at:", self.model_manager.export_path)
                 print(message)
 
     def perform_step(self, x, y_true: Tuple[tf.Tensor, tf.Tensor], cam_loss: CamLoss):
