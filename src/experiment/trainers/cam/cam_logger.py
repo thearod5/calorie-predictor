@@ -45,7 +45,7 @@ class CamLogger:
 
     def log_step(self, composite_loss: float, calorie_loss: float, feature_losss: float, alpha: float,
                  do_export: bool = True,
-                 do_print: bool = True, **kwargs):
+                 do_print: bool = False, **kwargs):
         """
         Records the composite and class losses in aggregate tallies.
         :param feature_losss: The loss of between the model's features and human maps.
