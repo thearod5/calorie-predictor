@@ -49,7 +49,7 @@ class Args:
         parser.add_argument('state', choices=[e.name.lower() for e in ModelState])
         parser.add_argument('manager',
                             choices=[e.name.lower() for e in ModelManagers])  # The model to create from scratch
-        parser.add_argument('--path', default=None)
+        parser.add_argument('--path', '-p', default=None)
         parser.add_argument('--modify', default=False, action="store_true")
         parser.add_argument('--export', '-e', default=None)
         parser.add_argument('--nocam', default=False, action="store_true")
