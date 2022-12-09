@@ -13,7 +13,7 @@ DEMO_DIR = "~/desktop/cpred"
 
 
 def export(image, path: str):
-    # image = cv2.resize(image, (250, 250))
+    image = cv2.resize(image, (250, 250))
     cv2.imwrite(path, image)
     print("Exported:", path)
 
