@@ -47,6 +47,24 @@ class HMapCreator:
         for image_name in tqdm(self.dataset.get_image_names(with_extension=True)):
             HMapCreator._save_avg_hmap_for_image(dataset_path, image_name)
 
+    @staticmethod
+    def get_image_id_from_result(result: Dict) -> str:
+        """
+        Returns the id of the image from the url within the MTurk result.
+        :param result: The result from the mechanical turk task.
+        :return: String representing image id.
+        """
+        result_image_url = result["Input.image_url"]
+        return result_image_url.split("/")[-1]
+
+    def get_image_result(self, image_id: str, result_index: int = 0):
+        results_df = self._read_result_file(self.result_file_names[result_index])
+        for result_index in range(len(results_df)):
+            result_row = results_df.iloc[result_index]
+            if self.get_image_id_from_result(result_row) == image_id:
+                return result_row
+        raise ValueError("Could not find result for:" + image_id)
+
     def _save_hmap_batch(self, result_file_name: str, batch_id: int, batch_id_path: str) -> None:
         """
         Reads file containing bounding boxes and saves them as heat maps.
@@ -55,17 +73,20 @@ class HMapCreator:
         :param batch_id_path:
         :return:
         """
-        results_data_path = os.path.join(self.results_path, result_file_name)
-        results_df = pd.read_csv(results_data_path)
+        results_df = self._read_result_file(result_file_name)
         batch_id_path = os.path.join(batch_id_path, "batches", str(batch_id))
         if not os.path.exists(batch_id_path):
             os.makedirs(batch_id_path)
         for i in tqdm(range(len(results_df))):
-            HMapCreator._create_hmap_for_image(results_df.iloc[i], batch_id_path)
+            HMapCreator.create_hmap_for_image(results_df.iloc[i], batch_id_path)
         print("Done!")
 
+    def _read_result_file(self, result_file_name: str) -> pd.DataFrame:
+        results_data_path = os.path.join(self.results_path, result_file_name)
+        return pd.read_csv(results_data_path)
+
     @staticmethod
-    def _create_hmap_for_image(bounding_box_item: Dict, batch_id_path: str) -> None:
+    def create_hmap_for_image(bounding_box_item: Dict, batch_id_path: str, write_image: bool = True) -> None:
         """
         box coordinates returned from your model's predictions
         color is the color of the bounding box you would like & 2 is the thickness of the bounding box
@@ -79,16 +100,20 @@ class HMapCreator:
             print("Missing bounding box: " + bounding_box_item["HITId"])
             return
         result_image_box = bounding_boxes[0]
-        input_image = HMapCreator._read_image(result_image_url)
+        input_image = HMapCreator.read_image_from_url(result_image_url)
 
-        (start_x, start_y, end_x, end_y) = HMapCreator._get_image_coordinates(result_image_box)
+        (start_x, start_y, end_x, end_y) = HMapCreator.get_bounding_box_coordinates(result_image_box)
         hmap = np.zeros(shape=input_image.shape)
         hmap[start_y: end_y, start_x: end_x] = 1
         hmap = (hmap * 255).astype(np.uint8)
 
         file_name = result_image_url.split("/")[-1]
         export_path = os.path.join(batch_id_path, file_name)
-        cv2.imwrite(export_path, hmap)
+
+        if write_image:
+            cv2.imwrite(export_path, hmap)
+        else:
+            return hmap
 
     @staticmethod
     def _save_avg_hmap_for_image(dataset_path: str, image_file_name: str) -> None:
@@ -121,7 +146,7 @@ class HMapCreator:
             cv2.imwrite(export_path, avg_hmap)
 
     @staticmethod
-    def _read_image(image_url: str):
+    def read_image_from_url(image_url: str):
         """
         Downloads and reads image from url.
         :param image_url: The url to the image to read
@@ -132,7 +157,7 @@ class HMapCreator:
         return cv2.imdecode(arr, -1)  # 'Load it as it is'
 
     @staticmethod
-    def _get_image_coordinates(image_box: dict):
+    def get_bounding_box_coordinates(image_box: dict):
         """
         Extracts the coordinates of the bounding box.
         :param image_box: Dictionary representing bounding box entry from turk task.
