@@ -6,8 +6,9 @@ researching the effect of leveraging human saliency within the task of calorie p
 include ResNet, Xception, and an definable ensemble model. Other models are easily implementable via a `ModelManager` (
 described below).
 
-The experiment design, results, and future work of this research can be
-found [here](https://drive.google.com/file/d/16RJtji8drDsiTuDpCOk40XdLUyD9TKSd/view?usp=sharing).
+[Project Presentation](https://drive.google.com/file/d/1mgxxS1DxzENLArtSiMoIOGBB0eLhusel/view?usp=sharing) <br />
+[Research Report](https://drive.google.com/file/d/19FHcjlMKFQ85fIYb5XxJ1C7qv5k-jWsA/view?usp=sharing)
+[Pre-Processing and Feature Extraction](https://drive.google.com/file/d/1iog7zLl5Wlsg5gEDFfAELnQW7WP12lPu/view?usp=sharing) <br />
 
 # Getting Started
 
