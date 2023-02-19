@@ -61,7 +61,7 @@ prediction. <br />
 
 ## Creating Production Data
 
-1. Download each dataset present in the report below and place into a folder.
+1. Download each dataset below and place into a folder.
 2. Update `PATH_TO_PROJECT` to point to this containing folder.
 3. Run script `scripts/preprocessing/runner.py` to create production data.
 
